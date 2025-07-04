@@ -1,0 +1,182 @@
+.bg-gradient-card {
+  background: linear-gradient(135deg, #232946 0%, #6366F1 100%);
+  color: #fff;
+  border-radius: 1.25rem;
+  border: none;
+}
+
+.card-glass {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(124, 58, 237, 0.1));
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  color: #fff;
+}
+
+.text-bright {
+  color: #fff !important;
+}
+
+.text-bright-muted {
+  color: #d1d5db !important;
+}
+
+.text-accent-indigo {
+  color: #6366F1 !important;
+}
+
+.text-accent-purple {
+  color: #7C3AED !important;
+}
+
+.text-accent-yellow {
+  color: #F59E0B !important;
+}
+
+.btn-accent-purple {
+  background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+  border: none;
+  color: white;
+  box-shadow: 0 4px 16px 0 rgba(124, 58, 237, 0.3);
+}
+
+.btn-accent-purple:hover {
+  background: linear-gradient(135deg, #6D28D9 0%, #4C1D95 100%);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px 0 rgba(124, 58, 237, 0.4);
+}
+
+.btn-accent-indigo {
+  background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+  border: none;
+  color: white;
+  box-shadow: 0 4px 16px 0 rgba(99, 102, 241, 0.3);
+}
+
+.btn-accent-indigo:hover {
+  background: linear-gradient(135deg, #5B5BD6 0%, #4338CA 100%);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px 0 rgba(99, 102, 241, 0.4);
+}
+
+.interactive-card {
+  transition: box-shadow 0.2s, transform 0.2s;
+  box-shadow: 0 4px 32px 0 rgba(99, 102, 241, 0.15), 0 1.5px 6px 0 rgba(0,0,0,0.08);
+  cursor: pointer;
+}
+
+.interactive-card:hover {
+  box-shadow: 0 8px 40px 0 rgba(99, 102, 241, 0.25), 0 3px 12px 0 rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
+
+// Flashcard specific styles
+.flashcard-container {
+  perspective: 1000px;
+}
+
+.flashcard-side {
+  backface-visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.flashcard:hover .flashcard-side {
+  box-shadow: 0 12px 35px rgba(99, 102, 241, 0.2);
+}
+
+// Quiz specific styles
+.btn-lg.w-100 {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.progress {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+}
+
+.progress-bar {
+  border-radius: 0.5rem;
+  transition: width 0.3s ease;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  box-shadow: 0 4px 16px 0 rgba(16, 185, 129, 0.3);
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 6px 20px 0 rgba(16, 185, 129, 0.4);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: none;
+  box-shadow: 0 4px 16px 0 rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: 0 6px 20px 0 rgba(239, 68, 68, 0.4);
+}
+
+.alert-info {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border: none;
+  color: #fff;
+  border-radius: 0.75rem;
+}
+
+// Animation utilities
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #6366F1, #7C3AED);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-secondary {
+  background: linear-gradient(135deg, #10B981, #059669);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@media (max-width: 600px) {
+  .bg-gradient-card, .card-glass {
+    min-width: 90vw !important;
+    max-width: 98vw !important;
+    padding: 1rem !important;
+  }
+  
+  .btn {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .flashcard-container {
+    height: 300px !important;
+  }
+
+  .btn-lg.w-100 {
+    min-height: 50px;
+    font-size: 0.9rem;
+  }
+} 

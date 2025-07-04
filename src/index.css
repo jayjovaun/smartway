@@ -1,0 +1,4 @@
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import './styles/theme.scss';
+
+/* Removed Tailwind CSS directives and layers. All styling is now handled by Bootstrap and theme.scss. */
