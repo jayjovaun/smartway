@@ -1,7 +1,8 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiArrowLeft, FiRotateCw, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiRotateCw, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { StudyNavigation } from '@components/StudyNavigation';
 
 interface Flashcard {
   question: string;
@@ -23,6 +24,34 @@ export const FlashcardsPage: React.FC = () => {
       navigate('/app');
     }
   }, [location.state, navigate]);
+
+  // Add keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      switch (event.key) {
+        case 'ArrowLeft':
+          event.preventDefault();
+          if (currentIndex > 0) {
+            handlePrevious();
+          }
+          break;
+        case 'ArrowRight':
+          event.preventDefault();
+          if (currentIndex < flashcards.length - 1) {
+            handleNext();
+          }
+          break;
+        case ' ':
+        case 'Enter':
+          event.preventDefault();
+          handleFlip();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentIndex, flashcards.length]);
 
   const handleNext = () => {
     if (currentIndex < flashcards.length - 1) {
@@ -57,33 +86,23 @@ export const FlashcardsPage: React.FC = () => {
   return (
     <div className="min-vh-100 bg-gradient-main">
       <div className="container-fluid px-3 py-4">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="d-flex align-items-center justify-content-between mb-4"
-        >
-          <button
-            onClick={() => navigate('/app')}
-            className="btn btn-outline-light btn-lg d-flex align-items-center gap-2"
-          >
-            <FiArrowLeft size={20} />
-            Back to App
-          </button>
-          <h1 className="gradient-text mb-0 fs-2 fw-bold">
-            📚 Flashcards
-          </h1>
-          <div className="text-bright fs-5">
-            {currentIndex + 1} / {flashcards.length}
-          </div>
-        </motion.div>
+        <StudyNavigation
+          currentPage="flashcards"
+          title="📚 Flashcards"
+          rightContent={
+            <div className="text-bright fs-5 fw-semibold">
+              {currentIndex + 1} / {flashcards.length}
+            </div>
+          }
+        />
 
         <div className="d-flex justify-content-center mb-4">
           <div 
             className="flashcard-container position-relative"
             style={{ 
               width: '100%', 
-              maxWidth: '600px', 
-              height: '400px',
+              maxWidth: '650px', 
+              height: '450px',
               perspective: '1000px'
             }}
           >
@@ -94,57 +113,82 @@ export const FlashcardsPage: React.FC = () => {
                 cursor: 'pointer'
               }}
               animate={{ rotateY: isFlipped ? 180 : 0 }}
-              transition={{ duration: 0.6, ease: 'easeInOut' }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
               onClick={handleFlip}
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.03, y: -5 }}
+              whileTap={{ scale: 0.98 }}
             >
+              {/* Front Side - Question */}
               <div
                 className="flashcard-side position-absolute w-100 h-100 d-flex align-items-center justify-content-center p-4"
                 style={{
                   backfaceVisibility: 'hidden',
-                  background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(124, 58, 237, 0.15))',
-                  border: '2px solid rgba(99, 102, 241, 0.3)',
-                  borderRadius: '20px',
-                  backdropFilter: 'blur(10px)'
+                  background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(124, 58, 237, 0.3))',
+                  border: '2px solid rgba(99, 102, 241, 0.5)',
+                  borderRadius: '24px',
+                  backdropFilter: 'blur(20px)',
+                  boxShadow: '0 16px 48px rgba(99, 102, 241, 0.4)',
+                  zIndex: isFlipped ? 1 : 2
                 }}
               >
-                <div className="text-center">
-                  <div className="mb-3 text-accent-indigo">
-                    <span className="fs-1">❓</span>
+                <div className="text-center w-100">
+                  <div className="mb-4 text-accent-indigo">
+                    <span className="display-4">❓</span>
                   </div>
-                  <h3 className="text-bright fw-bold mb-3">Question</h3>
-                  <p className="text-bright fs-4 lh-base mb-4">
+                  <h3 className="text-bright fw-bold mb-4 fs-3">Question</h3>
+                  <p className="text-bright fs-4 lh-base mb-4 px-3" style={{ 
+                    minHeight: '120px',
+                    color: '#ffffff !important',
+                    textShadow: '0 2px 6px rgba(0,0,0,0.7)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
                     {currentCard.question}
                   </p>
-                  <div className="d-flex align-items-center justify-content-center gap-2 text-bright-muted">
-                    <FiRotateCw size={16} />
-                    <span className="small">Click to reveal answer</span>
+                  <div className="d-flex align-items-center justify-content-center gap-2 text-bright">
+                    <FiRotateCw size={18} />
+                    <span className="small fw-medium" style={{ color: '#e5e7eb' }}>
+                      Click to reveal answer
+                    </span>
                   </div>
                 </div>
               </div>
 
+              {/* Back Side - Answer */}
               <div
                 className="flashcard-side position-absolute w-100 h-100 d-flex align-items-center justify-content-center p-4"
                 style={{
                   backfaceVisibility: 'hidden',
                   transform: 'rotateY(180deg)',
-                  background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(99, 102, 241, 0.15))',
-                  border: '2px solid rgba(124, 58, 237, 0.3)',
-                  borderRadius: '20px',
-                  backdropFilter: 'blur(10px)'
+                  background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(99, 102, 241, 0.3))',
+                  border: '2px solid rgba(124, 58, 237, 0.5)',
+                  borderRadius: '24px',
+                  backdropFilter: 'blur(20px)',
+                  boxShadow: '0 16px 48px rgba(124, 58, 237, 0.4)',
+                  zIndex: isFlipped ? 2 : 1
                 }}
               >
-                <div className="text-center">
-                  <div className="mb-3 text-accent-purple">
-                    <span className="fs-1">💡</span>
+                <div className="text-center w-100">
+                  <div className="mb-4 text-accent-purple">
+                    <span className="display-4">💡</span>
                   </div>
-                  <h3 className="text-bright fw-bold mb-3">Answer</h3>
-                  <p className="text-bright fs-4 lh-base mb-4">
+                  <h3 className="text-bright fw-bold mb-4 fs-3">Answer</h3>
+                  <p className="text-bright fs-4 lh-base mb-4 px-3" style={{ 
+                    minHeight: '120px',
+                    color: '#ffffff !important',
+                    textShadow: '0 2px 6px rgba(0,0,0,0.7)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
                     {currentCard.answer}
                   </p>
-                  <div className="d-flex align-items-center justify-content-center gap-2 text-bright-muted">
-                    <FiRotateCw size={16} />
-                    <span className="small">Click to see question</span>
+                  <div className="d-flex align-items-center justify-content-center gap-2 text-bright">
+                    <FiRotateCw size={18} />
+                    <span className="small fw-medium" style={{ color: '#e5e7eb' }}>
+                      Click to see question
+                    </span>
                   </div>
                 </div>
               </div>
@@ -152,39 +196,123 @@ export const FlashcardsPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Navigation Controls */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="d-flex justify-content-center align-items-center gap-4 mb-4"
         >
-          <button
+          <motion.button
             onClick={handlePrevious}
             disabled={currentIndex === 0}
             className="btn btn-outline-light btn-lg d-flex align-items-center gap-2"
-            style={{ minWidth: '120px' }}
+            style={{
+              borderRadius: '12px',
+              padding: '12px 24px',
+              minWidth: '120px'
+            }}
+            whileHover={currentIndex > 0 ? { scale: 1.05 } : {}}
+            whileTap={currentIndex > 0 ? { scale: 0.95 } : {}}
           >
             <FiChevronLeft size={20} />
             Previous
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
             onClick={handleFlip}
-            className="btn btn-primary btn-lg px-4 d-flex align-items-center gap-2"
+            className="btn btn-primary btn-lg d-flex align-items-center gap-2"
+            style={{
+              borderRadius: '12px',
+              padding: '12px 24px',
+              minWidth: '120px',
+              background: 'linear-gradient(135deg, #6366F1, #7C3AED)',
+              border: 'none'
+            }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             <FiRotateCw size={20} />
-            Flip Card
-          </button>
+            Flip
+          </motion.button>
 
-          <button
+          <motion.button
             onClick={handleNext}
             disabled={currentIndex === flashcards.length - 1}
             className="btn btn-outline-light btn-lg d-flex align-items-center gap-2"
-            style={{ minWidth: '120px' }}
+            style={{
+              borderRadius: '12px',
+              padding: '12px 24px',
+              minWidth: '120px'
+            }}
+            whileHover={currentIndex < flashcards.length - 1 ? { scale: 1.05 } : {}}
+            whileTap={currentIndex < flashcards.length - 1 ? { scale: 0.95 } : {}}
           >
             Next
             <FiChevronRight size={20} />
-          </button>
+          </motion.button>
+        </motion.div>
+
+        {/* Progress Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mb-4"
+        >
+          <div className="progress" style={{ height: '8px', borderRadius: '4px' }}>
+            <div 
+              className="progress-bar" 
+              style={{ 
+                width: `${((currentIndex + 1) / flashcards.length) * 100}%`,
+                background: 'linear-gradient(135deg, #6366F1, #7C3AED)'
+              }}
+            />
+          </div>
+          <div className="text-center mt-2">
+            <span className="text-bright-muted small">
+              Progress: {Math.round(((currentIndex + 1) / flashcards.length) * 100)}%
+            </span>
+          </div>
+        </motion.div>
+
+        {/* Study Tips */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="card-glass p-4 text-center"
+          style={{
+            maxWidth: '600px',
+            margin: '0 auto',
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2))',
+            border: '2px solid rgba(16, 185, 129, 0.3)'
+          }}
+        >
+          <h4 className="text-bright fw-bold mb-3 fs-5">📚 Study Tips</h4>
+          <div className="row g-3 text-center">
+            <div className="col-md-4 col-12">
+              <div className="text-bright-muted small">
+                <strong>⌨️ Keyboard:</strong><br />
+                ← → Arrow keys to navigate<br />
+                Space/Enter to flip
+              </div>
+            </div>
+            <div className="col-md-4 col-12">
+              <div className="text-bright-muted small">
+                <strong>💡 Study Method:</strong><br />
+                Read question carefully<br />
+                Think before flipping
+              </div>
+            </div>
+            <div className="col-md-4 col-12">
+              <div className="text-bright-muted small">
+                <strong>🎯 Best Practice:</strong><br />
+                Review multiple times<br />
+                Focus on difficult ones
+              </div>
+            </div>
+          </div>
         </motion.div>
       </div>
     </div>

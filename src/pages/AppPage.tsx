@@ -1,24 +1,87 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { InputForm } from '@components/InputForm';
-import { generateStudyPack } from '@api/generate';
+import { Logo } from '@components/Logo';
 import type { StudyPackResult } from '@api/generate';
 
 export const AppPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<StudyPackResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (input: string) => {
-    setIsLoading(true);
-    setError(null);
+  // Handle back navigation from study pages
+  useEffect(() => {
+    if (location.state?.generatedContent) {
+      setGeneratedContent(location.state.generatedContent);
+      // Clear the state to avoid setting it again
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  const handleSubmit = async (data: { notes?: string; file?: File }) => {
     try {
-      const result = await generateStudyPack(input);
+      setIsLoading(true);
+      
+      let response;
+      
+      if (data.file) {
+        // Handle file upload
+        const formData = new FormData();
+        formData.append('document', data.file);
+        
+        response = await fetch('/api/generate', {
+          method: 'POST',
+          body: formData
+        });
+      } else if (data.notes) {
+        // Handle text input
+        response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ notes: data.notes })
+        });
+      } else {
+        throw new Error('No content provided');
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate study pack');
+      }
+
+      const result = await response.json();
+      
+      if (!result.summary || !result.flashcards || !result.quiz) {
+        throw new Error('Invalid response format from server');
+      }
+
       setGeneratedContent(result);
-    } catch (err: any) {
-      setError(err.message || 'Failed to generate study pack.');
+    } catch (error) {
+      console.error('Error generating study pack:', error);
+      
+      let errorMessage = 'Failed to generate study pack. ';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Invalid file type')) {
+          errorMessage = 'Please upload a PDF, Word document (.docx, .doc), or text file.';
+        } else if (error.message.includes('file size')) {
+          errorMessage = 'File size must be less than 10MB. Please upload a smaller file.';
+        } else if (error.message.includes('No content found')) {
+          errorMessage = 'No text content could be extracted from the document. Please check the file.';
+        } else if (error.message.includes('Gemini API')) {
+          errorMessage = 'AI service is temporarily unavailable. Please try again in a moment.';
+        } else {
+          errorMessage += error.message;
+        }
+      }
+      
+      // Show user-friendly error message
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -63,6 +126,12 @@ export const AppPage: React.FC = () => {
   return (
     <div className="min-vh-100 bg-gradient-main">
       <div className="container-fluid px-3 py-4">
+        {/* Top Navigation with Logo */}
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <Logo size={48} showText={true} />
+          <div></div> {/* Spacer for alignment */}
+        </div>
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -73,7 +142,7 @@ export const AppPage: React.FC = () => {
             SmartWay Study Tool
           </h1>
           <p className="text-bright-muted lead">
-            Paste your notes and generate comprehensive study materials instantly
+            Transform your notes into comprehensive study materials instantly
           </p>
         </motion.div>
 
@@ -85,7 +154,7 @@ export const AppPage: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="d-flex flex-column align-items-center justify-content-center my-4"
+            className="d-flex flex-column align-items-center justify-content-center my-5"
             style={{ minHeight: 200 }}
           >
             <div className="spinner-border text-accent-indigo mb-3" style={{ width: 64, height: 64 }} role="status">
@@ -112,7 +181,7 @@ export const AppPage: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-4"
+            className="mt-5"
           >
             <div className="text-center mb-4">
               <h2 className="gradient-text fs-3 fw-bold mb-2">
@@ -123,18 +192,24 @@ export const AppPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="row g-3 justify-content-center">
+            <div className="row g-4 justify-content-center">
               {/* Summary Card */}
-              <div className="col-lg-4 col-md-6">
+              <div className="col-lg-4 col-md-6 col-12">
                 <motion.div
                   className="card-glass h-100 text-center p-4 interactive-card"
-                  whileHover={{ scale: 1.02, y: -5 }}
+                  whileHover={{ scale: 1.02, y: -3 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleNavigateToSummary}
-                  style={{ cursor: 'pointer' }}
+                  style={{ 
+                    cursor: 'pointer',
+                    minHeight: '280px',
+                    background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(124, 58, 237, 0.2))',
+                    border: '2px solid rgba(99, 102, 241, 0.3)',
+                    borderRadius: '16px'
+                  }}
                 >
                   <div className="mb-3">
-                    <span className="fs-1">📖</span>
+                    <span className="display-4">📖</span>
                   </div>
                   <h3 className="h5 fw-bold text-bright mb-3">Detailed Summary</h3>
                   <p className="text-bright-muted mb-4">
@@ -142,8 +217,17 @@ export const AppPage: React.FC = () => {
                   </p>
                   <div className="mt-auto">
                     <button
-                      onClick={handleNavigateToSummary}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNavigateToSummary();
+                      }}
                       className="btn btn-primary btn-lg w-100"
+                      style={{
+                        borderRadius: '12px',
+                        fontWeight: '600',
+                        background: 'linear-gradient(135deg, #6366F1, #7C3AED)',
+                        border: 'none'
+                      }}
                     >
                       View Summary
                     </button>
@@ -152,25 +236,40 @@ export const AppPage: React.FC = () => {
               </div>
 
               {/* Flashcards Card */}
-              <div className="col-lg-4 col-md-6">
+              <div className="col-lg-4 col-md-6 col-12">
                 <motion.div
                   className="card-glass h-100 text-center p-4 interactive-card"
-                  whileHover={{ scale: 1.02, y: -5 }}
+                  whileHover={{ scale: 1.02, y: -3 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleNavigateToFlashcards}
-                  style={{ cursor: 'pointer' }}
+                  style={{ 
+                    cursor: 'pointer',
+                    minHeight: '280px',
+                    background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(99, 102, 241, 0.2))',
+                    border: '2px solid rgba(124, 58, 237, 0.3)',
+                    borderRadius: '16px'
+                  }}
                 >
                   <div className="mb-3">
-                    <span className="fs-1">📚</span>
+                    <span className="display-4">📚</span>
                   </div>
                   <h3 className="h5 fw-bold text-bright mb-3">Interactive Flashcards</h3>
                   <p className="text-bright-muted mb-4">
-                    15 flashcards with flip animations to test your knowledge
+                    {generatedContent.flashcards?.length || 15} flashcards with flip animations to test your knowledge
                   </p>
                   <div className="mt-auto">
                     <button
-                      onClick={handleNavigateToFlashcards}
-                      className="btn btn-accent-purple btn-lg w-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNavigateToFlashcards();
+                      }}
+                      className="btn btn-primary btn-lg w-100"
+                      style={{
+                        borderRadius: '12px',
+                        fontWeight: '600',
+                        background: 'linear-gradient(135deg, #7C3AED, #6366F1)',
+                        border: 'none'
+                      }}
                     >
                       Study Flashcards
                     </button>
@@ -179,25 +278,40 @@ export const AppPage: React.FC = () => {
               </div>
 
               {/* Quiz Card */}
-              <div className="col-lg-4 col-md-6">
+              <div className="col-lg-4 col-md-6 col-12">
                 <motion.div
                   className="card-glass h-100 text-center p-4 interactive-card"
-                  whileHover={{ scale: 1.02, y: -5 }}
+                  whileHover={{ scale: 1.02, y: -3 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleNavigateToQuiz}
-                  style={{ cursor: 'pointer' }}
+                  style={{ 
+                    cursor: 'pointer',
+                    minHeight: '280px',
+                    background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(251, 191, 36, 0.2))',
+                    border: '2px solid rgba(245, 158, 11, 0.3)',
+                    borderRadius: '16px'
+                  }}
                 >
                   <div className="mb-3">
-                    <span className="fs-1">🧠</span>
+                    <span className="display-4">🧠</span>
                   </div>
                   <h3 className="h5 fw-bold text-bright mb-3">Interactive Quiz</h3>
                   <p className="text-bright-muted mb-4">
-                    20 questions with instant feedback and scoring
+                    {generatedContent.quiz?.length || 20} questions with instant feedback and scoring
                   </p>
                   <div className="mt-auto">
                     <button
-                      onClick={handleNavigateToQuiz}
-                      className="btn btn-accent-indigo btn-lg w-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNavigateToQuiz();
+                      }}
+                      className="btn btn-primary btn-lg w-100"
+                      style={{
+                        borderRadius: '12px',
+                        fontWeight: '600',
+                        background: 'linear-gradient(135deg, #F59E0B, #EAB308)',
+                        border: 'none'
+                      }}
                     >
                       Take Quiz
                     </button>
@@ -211,26 +325,30 @@ export const AppPage: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="text-center mt-4"
+              className="text-center mt-5"
             >
-              <div className="card-glass p-4">
-                <h4 className="text-bright fw-bold mb-3">📊 What's Inside Your Study Pack</h4>
+              <div className="card-glass p-4" style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2))',
+                border: '2px solid rgba(16, 185, 129, 0.3)',
+                borderRadius: '16px'
+              }}>
+                <h4 className="text-bright fw-bold mb-3 fs-5">📊 What's Inside Your Study Pack</h4>
                 <div className="row g-3 text-center">
-                  <div className="col-md-4">
-                    <div className="text-accent-indigo mb-2">
-                      <strong>{generatedContent.summary?.keyPoints?.length || 5}</strong>
+                  <div className="col-md-4 col-12">
+                    <div className="text-accent-indigo mb-2 fs-3 fw-bold">
+                      {generatedContent.summary?.keyPoints?.length || 5}
                     </div>
                     <div className="text-bright-muted small">Key Points</div>
                   </div>
-                  <div className="col-md-4">
-                    <div className="text-accent-purple mb-2">
-                      <strong>{generatedContent.flashcards?.length || 15}</strong>
+                  <div className="col-md-4 col-12">
+                    <div className="text-accent-purple mb-2 fs-3 fw-bold">
+                      {generatedContent.flashcards?.length || 15}
                     </div>
                     <div className="text-bright-muted small">Flashcards</div>
                   </div>
-                  <div className="col-md-4">
-                    <div className="text-accent-yellow mb-2">
-                      <strong>{generatedContent.quiz?.length || 20}</strong>
+                  <div className="col-md-4 col-12">
+                    <div className="text-accent-yellow mb-2 fs-3 fw-bold">
+                      {generatedContent.quiz?.length || 20}
                     </div>
                     <div className="text-bright-muted small">Quiz Questions</div>
                   </div>
@@ -251,6 +369,12 @@ export const AppPage: React.FC = () => {
                   setError(null);
                 }}
                 className="btn btn-outline-light btn-lg px-4"
+                style={{
+                  borderRadius: '12px',
+                  fontWeight: '600',
+                  borderColor: 'rgba(255, 255, 255, 0.3)',
+                  color: '#ffffff'
+                }}
               >
                 📝 Generate Another Study Pack
               </button>

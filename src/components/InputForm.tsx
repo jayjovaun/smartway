@@ -1,75 +1,282 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiInfo, FiZap, FiBookOpen } from 'react-icons/fi';
+import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { FiUpload, FiFileText, FiX, FiFile } from 'react-icons/fi';
 
 interface InputFormProps {
-  onSubmit: (input: string) => void;
+  onSubmit: (data: { notes?: string; file?: File }) => void;
   isLoading: boolean;
 }
 
 export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => {
-  const [input, setInput] = React.useState('');
-  const navigate = useNavigate();
+  const [notes, setNotes] = useState('');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [inputMethod, setInputMethod] = useState<'text' | 'file'>('text');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (input.trim() && !isLoading) {
-      onSubmit(input.trim());
+    if (inputMethod === 'text' && notes.trim()) {
+      onSubmit({ notes: notes.trim() });
+    } else if (inputMethod === 'file' && uploadedFile) {
+      onSubmit({ file: uploadedFile });
     }
   };
 
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      handleFileSelect(file);
+    }
+  }, []);
+
+  const handleFileSelect = (file: File) => {
+    const allowedTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword',
+      'text/plain'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please upload a PDF, Word document (.docx, .doc), or text file.');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) { // 10MB
+      alert('File size must be less than 10MB.');
+      return;
+    }
+
+    setUploadedFile(file);
+    setInputMethod('file');
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFileSelect(e.target.files[0]);
+    }
+  };
+
+  const removeFile = () => {
+    setUploadedFile(null);
+    setInputMethod('text');
+  };
+
+  const getFileIcon = (file: File) => {
+    if (file.type === 'application/pdf') return '📄';
+    if (file.type.includes('word')) return '📝';
+    if (file.type === 'text/plain') return '📋';
+    return '📁';
+  };
+
+  const canSubmit = (inputMethod === 'text' && notes.trim()) || (inputMethod === 'file' && uploadedFile);
+
   return (
-    <div className="container py-5">
-      <div className="mb-4">
-        <button className="btn btn-outline-secondary d-flex align-items-center gap-2" onClick={() => navigate('/')}
-          style={{ borderRadius: '0.75rem', fontWeight: 500 }}>
-          <FiArrowLeft /> Back
+    <div className="card-glass p-4 mx-auto" style={{ maxWidth: '800px' }}>
+      <div className="text-center mb-4">
+        <h2 className="text-bright fw-bold fs-4 mb-2">
+          📚 Create Your Study Pack
+        </h2>
+        <p className="text-bright-muted mb-0">
+          Choose your preferred input method below
+        </p>
+      </div>
+
+      {/* Input Method Toggle */}
+      <div className="d-flex gap-2 mb-4 justify-content-center">
+        <button
+          type="button"
+          onClick={() => setInputMethod('text')}
+          className={`btn ${inputMethod === 'text' ? 'btn-primary' : 'btn-outline-primary'} d-flex align-items-center gap-2 px-4 py-2`}
+          style={{ borderRadius: '12px', fontWeight: '600' }}
+        >
+          <FiFileText size={18} />
+          <span>Type Text</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setInputMethod('file')}
+          className={`btn ${inputMethod === 'file' ? 'btn-primary' : 'btn-outline-primary'} d-flex align-items-center gap-2 px-4 py-2`}
+          style={{ borderRadius: '12px', fontWeight: '600' }}
+        >
+          <FiUpload size={18} />
+          <span>Upload Document</span>
         </button>
       </div>
-      <div className="card p-4 shadow-lg bg-gradient-card">
-        <h2 className="fw-bold gradient-text mb-2">Paste Your Notes</h2>
-        <p className="text-bright-muted mb-4">Paste your lecture notes or study material below. SmartWay will instantly generate summaries, flashcards, and quizzes for you!</p>
-        <form onSubmit={handleSubmit} className="mb-4">
-          <div className="mb-3 position-relative">
+
+      <form onSubmit={handleSubmit}>
+        {inputMethod === 'text' ? (
+          /* Text Input Section */
+          <div className="mb-4">
+            <label htmlFor="notes" className="form-label text-bright fw-semibold fs-6 mb-3">
+              Your Study Material
+            </label>
             <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Paste your lecture notes here..."
-              className="input-field form-control h-48"
+              id="notes"
+              className="form-control text-light border-0"
+              rows={8}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Paste your notes, lecture content, textbook chapters, or any study material here..."
+              style={{
+                resize: 'vertical',
+                borderRadius: '12px',
+                background: 'rgba(31, 41, 55, 0.9)',
+                backdropFilter: 'blur(10px)',
+                border: '2px solid rgba(99, 102, 241, 0.3)',
+                fontSize: '16px',
+                lineHeight: '1.5',
+                padding: '1rem'
+              }}
               disabled={isLoading}
-              style={{ minHeight: '180px', fontSize: '1.1rem', background: 'rgba(30,30,40,0.95)', color: '#fff' }}
             />
+            <div className="text-bright-muted small mt-2 px-1">
+              The more detailed your content, the better your study pack will be!
+            </div>
           </div>
+        ) : (
+          /* File Upload Section */
+          <div className="mb-4">
+            <label className="form-label text-bright fw-semibold fs-6 mb-3">
+              Upload Your Document
+            </label>
+            
+            {!uploadedFile ? (
+              <div
+                className={`border-2 border-dashed rounded text-center transition-all ${
+                  dragActive 
+                    ? 'border-primary' 
+                    : 'border-secondary'
+                }`}
+                style={{
+                  borderRadius: '12px',
+                  background: dragActive 
+                    ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(124, 58, 237, 0.15))'
+                    : 'rgba(31, 41, 55, 0.5)',
+                  backdropFilter: 'blur(10px)',
+                  minHeight: '200px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  padding: '2rem 1rem'
+                }}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                <motion.div
+                  animate={{ scale: dragActive ? 1.1 : 1 }}
+                  className="text-center"
+                >
+                  <FiUpload size={48} className="text-primary mb-3" />
+                  <h5 className="text-bright mb-2">Drop your document here</h5>
+                  <p className="text-bright-muted mb-3">
+                    or click to browse files
+                  </p>
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,.doc,.txt"
+                    onChange={handleFileInput}
+                    className="d-none"
+                    id="fileInput"
+                    disabled={isLoading}
+                  />
+                  <label
+                    htmlFor="fileInput"
+                    className="btn btn-outline-primary px-4 py-2"
+                    style={{ borderRadius: '12px', fontWeight: '600' }}
+                  >
+                    <FiFile className="me-2" />
+                    Choose File
+                  </label>
+                  <div className="text-bright-muted small mt-3">
+                    Supports: PDF, Word (.docx, .doc), Text files (max 10MB)
+                  </div>
+                </motion.div>
+              </div>
+            ) : (
+              /* Uploaded File Display */
+              <div
+                className="border border-success rounded bg-success bg-opacity-10 p-3"
+                style={{ borderRadius: '12px' }}
+              >
+                <div className="d-flex align-items-center justify-content-between">
+                  <div className="d-flex align-items-center gap-3">
+                    <span style={{ fontSize: '24px' }}>{getFileIcon(uploadedFile)}</span>
+                    <div>
+                      <div className="text-bright fw-semibold">{uploadedFile.name}</div>
+                      <div className="text-bright-muted small">
+                        {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeFile}
+                    className="btn btn-sm btn-outline-danger"
+                    style={{ borderRadius: '8px' }}
+                    disabled={isLoading}
+                  >
+                    <FiX size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <div className="d-grid">
           <motion.button
             type="submit"
-            disabled={!input.trim() || isLoading}
-            className="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            disabled={!canSubmit || isLoading}
+            className="btn btn-primary btn-lg fw-bold"
+            style={{
+              background: 'linear-gradient(135deg, #6366F1, #7C3AED)',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '12px 24px',
+              fontSize: '16px'
+            }}
+            whileHover={canSubmit && !isLoading ? { scale: 1.02 } : {}}
+            whileTap={canSubmit && !isLoading ? { scale: 0.98 } : {}}
           >
             {isLoading ? (
-              <>
-                <FiZap className="animate-spin" /> Generating Study Pack...
-              </>
+              <span className="d-flex align-items-center justify-content-center gap-2">
+                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                {inputMethod === 'file' ? 'Processing Document...' : 'Generating Study Pack...'}
+              </span>
             ) : (
-              <>
-                <FiBookOpen /> Generate Study Pack
-              </>
+              <span className="d-flex align-items-center justify-content-center gap-2">
+                ✨ Generate Study Pack
+              </span>
             )}
           </motion.button>
-        </form>
-        <div className="mt-3">
-          <div className="d-flex align-items-center gap-2 mb-2 text-accent-indigo">
-            <FiInfo /> <span className="fw-semibold">Tips for Best Results:</span>
-          </div>
-          <ul className="text-bright-muted mb-0 ps-4" style={{ fontSize: '1rem' }}>
-            <li>Paste clear, well-structured notes for the best summaries.</li>
-            <li>Use headings and bullet points if possible.</li>
-            <li>Try with different subjects—SmartWay adapts to your content!</li>
-          </ul>
         </div>
-      </div>
+
+        {/* Information Footer */}
+        <div className="text-center mt-4">
+          <div className="text-bright-muted small">
+            <strong>What you'll get:</strong> Smart Summary • Interactive Flashcards • Adaptive Quiz
+          </div>
+        </div>
+      </form>
     </div>
   );
 }; 

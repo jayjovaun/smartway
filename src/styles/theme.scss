@@ -212,7 +212,12 @@ body {
 
 // Background Utilities
 .bg-gradient-main {
-  background: var(--gradient-bg);
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 25%, #2d1b4e 50%, #1a1a3e 75%, #0f0f23 100%);
+  background-attachment: fixed;
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+  min-height: 100vh;
+  position: relative;
 }
 
 .bg-gradient-card {
@@ -252,6 +257,13 @@ body {
 @keyframes glow {
   from { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
   to { box-shadow: 0 0 30px rgba(99, 102, 241, 0.6); }
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  25% { background-position: 100% 50%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
 }
 
 // Glassmorphism Effect
@@ -347,13 +359,16 @@ body {
   }
 }
 
+// Ensure text is always visible with better contrast
 .text-bright {
-  color: #fff !important;
-  text-shadow: 0 2px 8px #000a;
+  color: #ffffff !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+  font-weight: 500;
 }
+
 .text-bright-muted {
-  color: #f3f3ff !important;
-  text-shadow: 0 1px 4px #0008;
+  color: #e5e7eb !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 // Modal Styles
@@ -472,4 +487,111 @@ body {
     padding: 0.75rem 1.5rem !important;
     font-size: 1rem !important;
   }
+}
+
+// Improve button contrast and accessibility
+.btn-outline-light {
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  backdrop-filter: blur(10px);
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-light:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+}
+
+.btn-outline-light:disabled {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+// Enhanced card styling for better visibility
+.card-glass {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(124, 58, 237, 0.2));
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(99, 102, 241, 0.4);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-glass::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  pointer-events: none;
+  z-index: 1;
+}
+
+.card-glass > * {
+  position: relative;
+  z-index: 2;
+}
+
+// Mobile-first responsive design improvements
+@media (max-width: 768px) {
+  .bg-gradient-main {
+    background-attachment: scroll;
+  }
+  
+  body {
+    font-size: 14px;
+  }
+  
+  .btn {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+  }
+  
+  .card-glass {
+    margin: 0.5rem 0;
+    border-radius: 12px;
+  }
+}
+
+@media (max-width: 576px) {
+  body {
+    font-size: 13px;
+  }
+  
+  .container-fluid {
+    padding: 0.5rem;
+  }
+  
+  .btn {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+}
+
+// Improved focus states for accessibility
+.btn:focus,
+.btn:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.8);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
+// Better form control styling
+.form-control:focus {
+  border-color: rgba(99, 102, 241, 0.8);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  background: rgba(30, 30, 40, 0.98);
 }

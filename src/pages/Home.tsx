@@ -1,214 +1,460 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { FiArrowRight } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { Logo } from '@components/Logo';
 
-const featureExamples = [
-  {
-    title: 'Creative AI Summaries',
-    content: (
-      <>
-        <h5 className="fw-bold mb-2 text-bright">Example Summary</h5>
-        <p className="mb-0 text-bright">"<span className="gradient-text">Photosynthesis</span> is the process by which green plants use sunlight to synthesize foods from carbon dioxide and water. It produces oxygen as a byproduct and is essential for life on Earth."</p>
-      </>
-    )
-  },
-  {
-    title: 'Smart Flashcards & Quizzes',
-    content: (
-      <>
-        <h5 className="fw-bold mb-2 text-bright">Example Flashcard</h5>
-        <div className="card mb-2 p-3 text-bright" style={{ background: 'rgba(80,90,120,0.96)', border: '1.5px solid #6366F1', color: '#fff' }}>
-          <div className="fw-semibold mb-1 text-bright">Q: What is the powerhouse of the cell?</div>
-          <div className="text-accent-indigo text-bright">A: Mitochondria</div>
-        </div>
-        <h5 className="fw-bold mb-2 mt-3 text-bright">Example Quiz</h5>
-        <div className="card p-3 text-bright" style={{ background: 'rgba(80,90,120,0.96)', border: '1.5px solid #6366F1', color: '#fff' }}>
-          <div className="mb-1 text-bright">Which gas is produced during photosynthesis?</div>
-          <ul className="mb-0 text-bright">
-            <li>Oxygen</li>
-            <li>Carbon Dioxide</li>
-            <li>Nitrogen</li>
-          </ul>
-          <div className="mt-2 text-accent-indigo text-bright">Correct: Oxygen</div>
-        </div>
-      </>
-    )
-  },
-  {
-    title: 'Minimal, Distraction-Free',
-    content: (
-      <>
-        <h5 className="fw-bold mb-2 text-bright">Minimal Mode Example</h5>
-        <p className="mb-0 text-bright">All you see is your content and your study tools—no ads, no clutter, just a clean, focused workspace.</p>
-      </>
-    )
-  }
-];
-
 export const Home: React.FC = () => {
   const navigate = useNavigate();
-  const [ctaHover, setCtaHover] = useState(false);
-  const [modalOpen, setModalOpen] = useState<number|null>(null);
 
-  useEffect(() => {
-    if (modalOpen !== null) {
-      const handler = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') setModalOpen(null);
-      };
-      window.addEventListener('keydown', handler);
-      return () => window.removeEventListener('keydown', handler);
+  const handleGetStarted = () => {
+    navigate('/app');
+  };
+
+  // Stagger animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        delayChildren: 0.3,
+        staggerChildren: 0.2
+      }
     }
-  }, [modalOpen]);
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring" as const,
+        damping: 12,
+        stiffness: 200
+      }
+    }
+  };
+
+  const cardVariants = {
+    hidden: { scale: 0.8, opacity: 0 },
+    visible: {
+      scale: 1,
+      opacity: 1,
+      transition: {
+        type: "spring" as const,
+        damping: 10,
+        stiffness: 100
+      }
+    }
+  };
 
   return (
-    <div className="min-vh-100 bg-gradient-main d-flex flex-column">
-      {/* Hero Section */}
-      <section className="py-5 flex-grow-1 d-flex align-items-center">
-        <div className="container">
+    <div className="min-vh-100 bg-gradient-main">
+      {/* Animated Background Particles */}
+      <div 
+        className="position-fixed top-0 start-0 pointer-events-none" 
+        style={{ 
+          width: 'calc(100vw - 20px)', 
+          height: '100vh', 
+          overflow: 'hidden',
+          zIndex: 0
+        }}
+      >
+        {[...Array(8)].map((_, i) => (
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="row align-items-center justify-content-center"
-          >
-            <div className="col-lg-7 text-center text-lg-start mb-5 mb-lg-0">
-              <div className="d-flex align-items-center justify-content-center justify-content-lg-start mb-3 gap-3">
-                <Logo size={56} />
-                <span className="display-4 fw-bold gradient-text" style={{ letterSpacing: '0.02em', textShadow: '0 2px 12px #0008' }}>SmartWay</span>
-              </div>
-              <h2 className="fw-semibold mb-3 fs-2" style={{ color: '#fff', textShadow: '0 2px 8px #000a' }}>
-                The creative AI study companion for modern learners
-              </h2>
-              <p className="fs-5 mb-4" style={{ color: '#e0e0ff', textShadow: '0 1px 4px #0006' }}>
-                Instantly turn your notes into <span className="gradient-text-secondary">smart summaries</span>, <span className="gradient-text">flashcards</span>, and <span className="gradient-text">quizzes</span>.<br />
-                Designed for students, creators, and lifelong learners who want to study smarter, not harder.
-              </p>
-              <motion.button
-                onClick={() => navigate('/app')}
-                className="btn btn-primary btn-lg px-5 py-3 shadow-lg"
-                whileHover={{ scale: 1.07 }}
-                whileTap={{ scale: 0.97 }}
-                onMouseEnter={() => setCtaHover(true)}
-                onMouseLeave={() => setCtaHover(false)}
-                style={{ boxShadow: ctaHover ? '0 4px 32px #6366F1aa' : undefined }}
-              >
-                Try SmartWay Now <FiArrowRight className="ms-2" />
-              </motion.button>
-            </div>
-            <div className="col-lg-5 d-flex align-items-center justify-content-center">
-              {/* Modern abstract SVG or animated element */}
-              <svg width="320" height="320" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg" className="d-none d-lg-block animate-float">
-                <defs>
-                  <radialGradient id="sw-bg" cx="50%" cy="50%" r="80%" fx="50%" fy="50%">
-                    <stop offset="0%" stopColor="#6366F1" stopOpacity="0.7" />
-                    <stop offset="100%" stopColor="#7C3AED" stopOpacity="0.1" />
-                  </radialGradient>
-                </defs>
-                <ellipse cx="160" cy="160" rx="120" ry="80" fill="url(#sw-bg)" />
-                <circle cx="100" cy="120" r="18" fill="#6366F1" opacity="0.7" />
-                <circle cx="220" cy="200" r="12" fill="#7C3AED" opacity="0.5" />
-                <circle cx="180" cy="80" r="8" fill="#fff" opacity="0.3" />
-                <circle cx="80" cy="220" r="6" fill="#fff" opacity="0.18" />
-              </svg>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+            key={i}
+            className="position-absolute rounded-circle"
+            style={{
+              width: `${20 + i * 8}px`,
+              height: `${20 + i * 8}px`,
+              background: `linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(124, 58, 237, 0.1))`,
+              left: `${10 + i * 12}%`,
+              top: `${15 + i * 10}%`,
+            }}
+            animate={{
+              x: [0, 30, 0],
+              y: [0, -20, 0],
+              scale: [1, 1.2, 1],
+              opacity: [0.3, 0.6, 0.3],
+            }}
+            transition={{
+              duration: 4 + i * 0.5,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 0.2
+            }}
+          />
+        ))}
+      </div>
 
-      {/* What Makes Us Different Section */}
-      <section className="py-5 bg-gradient-card">
-        <div className="container">
-          <div className="row justify-content-center mb-4">
-            <div className="col-lg-8 text-center">
-              <h3 className="display-6 fw-bold mb-3 gradient-text">What Makes SmartWay Different?</h3>
-              <p className="fs-5 bright-muted mb-0">
-                SmartWay isn't just another note app. It's a creative AI-powered study partner that adapts to your style, helps you focus, and makes learning fun.<br />
-                <span className="text-accent-indigo">Just a free real smart tools for real learners.</span>
-              </p>
-            </div>
-          </div>
-          <div className="row g-4 mt-2">
-            {['🧠','🎲','✨'].map((icon, i) => (
-              <div key={i} className="col-md-4">
-                <div
-                  className="card-feature h-100 text-center interactive-card"
-                  tabIndex={0}
-                  role="button"
-                  onClick={() => setModalOpen(i)}
-                  onKeyPress={e => (e.key === 'Enter' || e.key === ' ') && setModalOpen(i)}
-                  style={{ cursor: 'pointer' }}
+      <div className="container-fluid px-3 py-4 position-relative" style={{ zIndex: 2 }}>
+        {/* Header with Logo Only */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="d-flex justify-content-start align-items-center mb-5"
+        >
+          <Logo size={64} showText={true} />
+        </motion.div>
+
+        {/* Hero Section */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="text-center mb-5"
+        >
+          <motion.h1 
+            variants={itemVariants}
+            className="display-3 fw-bold mb-4"
+            style={{
+              background: 'linear-gradient(135deg, #6366F1, #7C3AED, #EC4899)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              fontSize: 'clamp(2rem, 8vw, 4rem)'
+            }}
+          >
+            Transform Your Notes into<br />
+            <motion.span
+              animate={{
+                backgroundPosition: ['0% 0%', '100% 100%', '0% 0%']
+              }}
+              transition={{
+                duration: 5,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+              style={{
+                background: 'linear-gradient(45deg, #6366F1, #7C3AED, #EC4899, #6366F1)',
+                backgroundSize: '300% 300%',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}
+            >
+              Powerful Study Materials
+            </motion.span>
+          </motion.h1>
+          
+          <motion.p 
+            variants={itemVariants}
+            className="lead text-bright-muted mb-5" 
+            style={{ 
+              maxWidth: '700px', 
+              margin: '0 auto',
+              fontSize: '1.3rem',
+              lineHeight: '1.6'
+            }}
+          >
+            Upload documents or paste your notes and instantly generate comprehensive study packs 
+            with summaries, flashcards, and adaptive quizzes powered by AI.
+          </motion.p>
+          
+          <motion.div variants={itemVariants}>
+            <motion.button
+              onClick={handleGetStarted}
+              className="btn btn-primary btn-lg px-5 py-3 position-relative overflow-hidden"
+              style={{
+                borderRadius: '16px',
+                background: 'linear-gradient(135deg, #6366F1, #7C3AED)',
+                border: 'none',
+                fontWeight: '600',
+                fontSize: '20px',
+                boxShadow: '0 10px 30px rgba(99, 102, 241, 0.4)'
+              }}
+              whileHover={{ 
+                scale: 1.05, 
+                y: -3,
+                boxShadow: '0 15px 40px rgba(99, 102, 241, 0.6)'
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <motion.span
+                className="position-absolute top-0 start-0 w-100 h-100"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.2), transparent)',
+                  borderRadius: '16px'
+                }}
+                initial={{ x: '-100%' }}
+                whileHover={{ x: '100%' }}
+                transition={{ duration: 0.6 }}
+              />
+              <span className="position-relative d-flex align-items-center gap-2">
+                ✨ Start Creating Study Packs
+                <motion.span
+                  animate={{ x: [0, 5, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  <div className="mb-3 gradient-text" style={{ fontSize: '2.5rem' }}>{icon}</div>
-                  <h4 className="h5 fw-semibold mb-2 text-bright">{featureExamples[i].title}</h4>
-                  <p className="text-bright-muted">{['Not just bullet points—get context-aware, easy-to-review summaries that help you actually understand.','Auto-generate flashcards and quizzes that adapt to your learning pace and style.','A beautiful, modern interface that keeps you focused—no clutter, no distractions, just learning.'][i]}</p>
+                  →
+                </motion.span>
+              </span>
+            </motion.button>
+          </motion.div>
+        </motion.div>
+
+        {/* Features Section */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="row g-4 mb-5"
+        >
+          {[
+            {
+              emoji: '📖',
+              title: 'Smart Summaries',
+              description: 'AI-powered summaries that extract key concepts, definitions, and important points from your study materials.',
+              gradient: 'linear-gradient(135deg, #3B82F6, #1E40AF)'
+            },
+            {
+              emoji: '📚',
+              title: 'Interactive Flashcards',
+              description: 'Beautifully designed flashcards with flip animations and keyboard navigation for effective active recall.',
+              gradient: 'linear-gradient(135deg, #8B5CF6, #6D28D9)'
+            },
+            {
+              emoji: '🧠',
+              title: 'Adaptive Quizzes',
+              description: 'Dynamic quiz generation that adapts to your content length and complexity, with instant feedback and explanations.',
+              gradient: 'linear-gradient(135deg, #EF4444, #DC2626)'
+            }
+          ].map((feature, index) => (
+            <div key={index} className="col-lg-4 col-md-6">
+              <motion.div
+                variants={cardVariants}
+                className="card-glass h-100 text-center p-4 position-relative overflow-hidden"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '20px',
+                  backdropFilter: 'blur(10px)'
+                }}
+                whileHover={{
+                  scale: 1.05,
+                  rotateY: 5,
+                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)'
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                <motion.div
+                  className="position-absolute top-0 start-0 w-100 h-100"
+                  style={{
+                    background: feature.gradient,
+                    opacity: 0,
+                    borderRadius: '20px'
+                  }}
+                  whileHover={{ opacity: 0.1 }}
+                  transition={{ duration: 0.3 }}
+                />
+                <div className="position-relative">
+                  <motion.div 
+                    className="mb-3"
+                    whileHover={{ 
+                      scale: 1.2,
+                      rotate: [0, -10, 10, 0]
+                    }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <span className="display-4">{feature.emoji}</span>
+                  </motion.div>
+                  <h3 className="h5 fw-bold text-bright mb-3">{feature.title}</h3>
+                  <p className="text-bright-muted">{feature.description}</p>
                 </div>
+              </motion.div>
+            </div>
+          ))}
+        </motion.div>
+
+        {/* How it Works Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.8 }}
+          className="text-center mb-5"
+        >
+          <motion.h2 
+            className="fw-bold mb-4 fs-2"
+            style={{
+              background: 'linear-gradient(135deg, #6366F1, #7C3AED)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}
+            whileHover={{ scale: 1.05 }}
+          >
+            How SmartWay Works
+          </motion.h2>
+          
+          <div className="row g-4">
+            {[
+              { number: '1', title: 'Upload or Paste', description: 'Add your notes, documents, or study materials', color: '#6366F1' },
+              { number: '2', title: 'AI Processing', description: 'Our AI analyzes and extracts key information', color: '#7C3AED' },
+              { number: '3', title: 'Study Pack Generated', description: 'Receive summaries, flashcards, and quizzes', color: '#F59E0B' },
+              { number: '4', title: 'Study & Excel', description: 'Use interactive tools to master your material', color: '#10B981' }
+            ].map((step, index) => (
+              <div key={index} className="col-lg-3 col-md-6">
+                <motion.div
+                  className="card-glass p-4 h-100"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '16px'
+                  }}
+                  whileHover={{
+                    scale: 1.05,
+                    y: -5,
+                    boxShadow: `0 15px 30px ${step.color}30`
+                  }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <motion.div 
+                    className="mb-3"
+                    whileHover={{ 
+                      scale: 1.1,
+                      rotate: 360
+                    }}
+                    transition={{ duration: 0.6 }}
+                  >
+                    <div 
+                      className="d-inline-flex align-items-center justify-content-center rounded-circle"
+                      style={{
+                        width: '60px',
+                        height: '60px',
+                        background: `linear-gradient(135deg, ${step.color}, ${step.color}CC)`,
+                        boxShadow: `0 8px 20px ${step.color}40`
+                      }}
+                    >
+                      <span className="text-white fw-bold fs-4">{step.number}</span>
+                    </div>
+                  </motion.div>
+                  <h4 className="h6 fw-bold text-bright mb-2">{step.title}</h4>
+                  <p className="text-bright-muted small">{step.description}</p>
+                </motion.div>
               </div>
             ))}
           </div>
-        </div>
-      </section>
+        </motion.div>
 
-      {/* CTA Footer */}
-      <footer className="footer mt-auto">
-        <div className="container text-center">
-          <div className="d-flex flex-column align-items-center gap-2 mb-2">
-            <Logo size={32} />
-            <span className="fw-bold gradient-text fs-4">SmartWay</span>
-          </div>
-          <p className="text-bright-muted mb-1">Made by Josh Ivan Sartin, for students. Free, just smart learning.</p>
-          <p className="text-bright-muted small">&copy; {new Date().getFullYear()} SmartWay. All rights reserved.</p>
-        </div>
-      </footer>
-
-      {modalOpen !== null && (
-        <div
-          className="modal show d-block"
-          tabIndex={-1}
-          style={{
-            background: 'rgba(0,0,0,0.45)',
-            zIndex: 2000,
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            pointerEvents: 'auto',
-          }}
-          onClick={() => setModalOpen(null)}
+        {/* Supported Formats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="text-center mb-5"
         >
-          <div
-            className="modal-dialog modal-dialog-centered"
-            style={{
-              minHeight: '100vh',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              pointerEvents: 'none',
+          <motion.div 
+            className="card-glass p-4 mx-auto" 
+            style={{ 
+              maxWidth: '600px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '20px'
+            }}
+            whileHover={{
+              scale: 1.02,
+              boxShadow: '0 20px 40px rgba(99, 102, 241, 0.2)'
             }}
           >
-            <div
-              className="modal-glass position-relative"
-              style={{ pointerEvents: 'auto' }}
-              onClick={e => e.stopPropagation()}
-            >
-              <button
-                className="modal-close"
-                onClick={() => setModalOpen(null)}
-                style={{ zIndex: 2100, position: 'absolute', top: '1.2rem', right: '1.2rem' }}
-                aria-label="Close"
-              >
-                &times;
-              </button>
-              {featureExamples[modalOpen].content}
+            <h3 className="fw-bold mb-3 fs-4" style={{
+              background: 'linear-gradient(135deg, #6366F1, #7C3AED)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              Supported Formats
+            </h3>
+            <div className="row g-3">
+              {[
+                { emoji: '📄', label: 'PDF' },
+                { emoji: '📝', label: 'Word' },
+                { emoji: '📋', label: 'Text' },
+                { emoji: '⌨️', label: 'Paste' }
+              ].map((format, index) => (
+                <div key={index} className="col-3">
+                  <motion.div 
+                    className="text-center"
+                    whileHover={{ 
+                      scale: 1.1,
+                      y: -5
+                    }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="fs-2 mb-1">{format.emoji}</div>
+                    <div className="text-bright-muted small">{format.label}</div>
+                  </motion.div>
+                </div>
+              ))}
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        </motion.div>
+
+        {/* Call to Action */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.0 }}
+          className="text-center"
+        >
+          <motion.h2 
+            className="fw-bold mb-3 fs-3"
+            style={{
+              background: 'linear-gradient(135deg, #6366F1, #7C3AED)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}
+            whileHover={{ scale: 1.05 }}
+          >
+            Ready to Transform Your Study Experience?
+          </motion.h2>
+          <motion.p 
+            className="text-bright-muted mb-4"
+            style={{ fontSize: '1.1rem' }}
+          >
+            Join thousands of students who are already studying smarter, not harder.
+          </motion.p>
+          <motion.button
+            onClick={handleGetStarted}
+            className="btn btn-primary btn-lg px-5 py-3 position-relative overflow-hidden"
+            style={{
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #6366F1, #7C3AED)',
+              border: 'none',
+              fontWeight: '600',
+              fontSize: '20px',
+              boxShadow: '0 10px 30px rgba(99, 102, 241, 0.4)'
+            }}
+            whileHover={{ 
+              scale: 1.05, 
+              y: -3,
+              boxShadow: '0 15px 40px rgba(99, 102, 241, 0.6)'
+            }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <motion.span
+              className="position-absolute top-0 start-0 w-100 h-100"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.2), transparent)',
+                borderRadius: '16px'
+              }}
+              initial={{ x: '-100%' }}
+              whileHover={{ x: '100%' }}
+              transition={{ duration: 0.6 }}
+            />
+            <span className="position-relative d-flex align-items-center gap-2">
+              🚀 Get Started for Free
+              <motion.span
+                animate={{ x: [0, 5, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                →
+              </motion.span>
+            </span>
+          </motion.button>
+        </motion.div>
+      </div>
     </div>
   );
 };

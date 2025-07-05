@@ -38,3 +38,343 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Enhanced interactive card hover effects */
+.interactive-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.interactive-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 64px rgba(0, 0, 0, 0.4);
+}
+
+/* Improved flashcard styling */
+.flashcard-container {
+  -webkit-perspective: 1000px;
+  perspective: 1000px;
+}
+
+.flashcard {
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+
+.flashcard-side {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+}
+
+.flashcard-side:last-child {
+  -webkit-transform: rotateY(180deg);
+  transform: rotateY(180deg);
+}
+
+/* Enhanced button styling with consistent effects */
+.btn {
+  border: none;
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+  z-index: 1;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+.btn > * {
+  position: relative;
+  z-index: 2;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn:disabled::before {
+  display: none;
+}
+
+/* Primary button styling */
+.btn-primary {
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #5b5bd6, #6d28d9);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+/* Outline button styling */
+.btn-outline-light {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  backdrop-filter: blur(5px);
+}
+
+.btn-outline-light:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.btn-outline-primary {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #6366f1;
+  backdrop-filter: blur(5px);
+}
+
+.btn-outline-primary:hover {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.5);
+  color: #6366f1;
+}
+
+/* Success and danger button styling */
+.btn-success {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  color: white;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: white;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+}
+
+/* Enhanced focus states for accessibility */
+.btn:focus,
+.btn:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.8);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+}
+
+/* Form control styling */
+.form-control {
+  background: rgba(31, 41, 55, 0.9);
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  color: #ffffff;
+  border-radius: 12px;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus {
+  background: rgba(31, 41, 55, 0.95);
+  border-color: rgba(99, 102, 241, 0.6);
+  color: #ffffff;
+  box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+}
+
+.form-control::placeholder {
+  color: rgba(229, 231, 235, 0.6);
+}
+
+/* Progress bar improvements */
+.progress {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  height: 8px;
+}
+
+.progress-bar {
+  border-radius: 4px;
+  transition: width 0.6s ease;
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+}
+
+/* Text styling improvements */
+.text-bright {
+  color: #ffffff !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.text-bright-muted {
+  color: #e5e7eb !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+}
+
+/* Card glass effect */
+.card-glass {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(124, 58, 237, 0.2));
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-glass::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  pointer-events: none;
+  z-index: 1;
+}
+
+.card-glass > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Mobile responsive improvements */
+@media (max-width: 768px) {
+  .btn {
+    min-height: 48px;
+    font-size: 16px;
+    padding: 0.75rem 1rem;
+  }
+  
+  .btn-lg {
+    min-height: 52px;
+    font-size: 16px;
+    padding: 0.875rem 1.5rem;
+  }
+  
+  .btn-sm {
+    min-height: 40px;
+    font-size: 14px;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .interactive-card {
+    margin-bottom: 1rem;
+  }
+  
+  .flashcard-container {
+    margin: 0 auto;
+    max-width: 100%;
+    height: 320px !important;
+  }
+
+  .flashcard-side {
+    padding: 1.5rem !important;
+  }
+
+  .card-glass {
+    padding: 1.5rem !important;
+    border-radius: 12px !important;
+  }
+
+  /* Typography adjustments for mobile */
+  .fs-1 { font-size: 1.5rem !important; }
+  .fs-2 { font-size: 1.4rem !important; }
+  .fs-3 { font-size: 1.3rem !important; }
+  .fs-4 { font-size: 1.2rem !important; }
+  .fs-5 { font-size: 1.1rem !important; }
+
+  .display-3 { font-size: 2.5rem !important; }
+  .display-4 { font-size: 2rem !important; }
+}
+
+/* Tablet responsiveness */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .flashcard-container {
+    height: 400px !important;
+    max-width: 600px !important;
+  }
+
+  .card-glass {
+    padding: 2rem !important;
+  }
+}
+
+/* Animation utilities */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Spinner styling */
+.spinner-border {
+  border-color: transparent;
+  border-top-color: currentColor;
+  border-right-color: currentColor;
+}
+
+/* Alert improvements */
+.alert {
+  border-radius: 12px;
+  border: none;
+  backdrop-filter: blur(10px);
+}
+
+.alert-danger {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2));
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ffffff;
+}
+
+.alert-success {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2));
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #ffffff;
+}

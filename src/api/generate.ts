@@ -74,12 +74,3 @@ export interface StudyPackResult {
   }>;
 }
 
-export async function generateStudyPack(notes: string): Promise<StudyPackResult> {
-  const res = await fetch('/api/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ notes })
-  });
-  if (!res.ok) throw new Error('Failed to generate study pack');
-  return await res.json();
-} 
