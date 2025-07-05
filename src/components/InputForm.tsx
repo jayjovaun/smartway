@@ -11,7 +11,6 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => 
   const [notes, setNotes] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
-  // Temporarily force text input only for Vercel deployment
   const [inputMethod, setInputMethod] = useState<'text' | 'file'>('text');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -101,12 +100,11 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => 
           📚 Create Your Study Pack
         </h2>
         <p className="text-bright-muted mb-0">
-          Paste your study material below to generate summaries, flashcards, and quizzes
+          Choose your preferred input method below
         </p>
       </div>
 
-      {/* Temporarily hide input method toggle - force text only for deployment */}
-      {/* 
+      {/* Input Method Toggle */}
       <div className="d-flex gap-2 mb-4 justify-content-center">
         <button
           type="button"
@@ -127,10 +125,8 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => 
           <span>Upload Document</span>
         </button>
       </div>
-      */}
 
       <form onSubmit={handleSubmit}>
-        {/* Force text input only for now */}
         {inputMethod === 'text' ? (
           /* Text Input Section */
           <div className="mb-4">
@@ -157,20 +153,101 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => 
               disabled={isLoading}
             />
             <div className="text-bright-muted small mt-2 px-1">
-              The more detailed your content, the better your study pack will be! File upload temporarily disabled - coming soon!
+              The more detailed your content, the better your study pack will be!
             </div>
           </div>
-        ) : null}
-
-        {/* Hide file upload section for now */}
-        {/* 
-        {inputMethod === 'file' ? (
-          // File Upload Section - temporarily disabled
+        ) : (
+          /* File Upload Section */
           <div className="mb-4">
-            ...file upload code...
+            <label className="form-label text-bright fw-semibold fs-6 mb-3">
+              Upload Your Document
+            </label>
+            
+            {!uploadedFile ? (
+              <div
+                className={`border-2 border-dashed rounded text-center transition-all ${
+                  dragActive 
+                    ? 'border-primary' 
+                    : 'border-secondary'
+                }`}
+                style={{
+                  borderRadius: '12px',
+                  background: dragActive 
+                    ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(124, 58, 237, 0.15))'
+                    : 'rgba(31, 41, 55, 0.5)',
+                  backdropFilter: 'blur(10px)',
+                  minHeight: '200px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  padding: '2rem 1rem'
+                }}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                <motion.div
+                  animate={{ scale: dragActive ? 1.1 : 1 }}
+                  className="text-center"
+                >
+                  <FiUpload size={48} className="text-primary mb-3" />
+                  <h5 className="text-bright mb-2">Drop your document here</h5>
+                  <p className="text-bright-muted mb-3">
+                    or click to browse files
+                  </p>
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,.doc,.txt"
+                    onChange={handleFileInput}
+                    className="d-none"
+                    id="fileInput"
+                    disabled={isLoading}
+                  />
+                  <label
+                    htmlFor="fileInput"
+                    className="btn btn-outline-primary px-4 py-2"
+                    style={{ borderRadius: '12px', fontWeight: '600' }}
+                  >
+                    <FiFile className="me-2" />
+                    Choose File
+                  </label>
+                  <div className="text-bright-muted small mt-3">
+                    Supports: PDF, Word (.docx, .doc), Text files (max 10MB)
+                  </div>
+                </motion.div>
+              </div>
+            ) : (
+              /* Uploaded File Display */
+              <div
+                className="border border-success rounded bg-success bg-opacity-10 p-3"
+                style={{ borderRadius: '12px' }}
+              >
+                <div className="d-flex align-items-center justify-content-between">
+                  <div className="d-flex align-items-center gap-3">
+                    <span style={{ fontSize: '24px' }}>{getFileIcon(uploadedFile)}</span>
+                    <div>
+                      <div className="text-bright fw-semibold">{uploadedFile.name}</div>
+                      <div className="text-bright-muted small">
+                        {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeFile}
+                    className="btn btn-sm btn-outline-danger"
+                    style={{ borderRadius: '8px' }}
+                    disabled={isLoading}
+                  >
+                    <FiX size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        ) : null}
-        */}
+        )}
 
         {/* Submit Button */}
         <div className="d-grid">
