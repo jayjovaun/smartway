@@ -51,13 +51,21 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => 
       'text/plain'
     ];
 
+    // Check file type
     if (!allowedTypes.includes(file.type)) {
-      alert('Please upload a PDF, Word document (.docx, .doc), or text file.');
+      console.warn('Invalid file type:', file.type);
       return;
     }
 
+    // Check file size
     if (file.size > 10 * 1024 * 1024) { // 10MB
-      alert('File size must be less than 10MB.');
+      console.warn('File too large:', file.size);
+      return;
+    }
+
+    // Check if file is empty
+    if (file.size === 0) {
+      console.warn('File is empty');
       return;
     }
 

@@ -413,7 +413,7 @@ export const Home: React.FC = () => {
             className="text-bright-muted mb-4"
             style={{ fontSize: '1.1rem' }}
           >
-            Join thousands of students who are already studying smarter, not harder.
+            Made by Josh Ivan Sartin. All rights reserved. 2025
           </motion.p>
           <motion.button
             onClick={handleGetStarted}

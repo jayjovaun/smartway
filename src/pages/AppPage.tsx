@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { InputForm } from '@components/InputForm';
 import { Logo } from '@components/Logo';
+import { ErrorModal } from '@components/ErrorModal';
 import type { StudyPackResult } from '@api/generate';
 
 export const AppPage: React.FC = () => {
@@ -11,6 +12,8 @@ export const AppPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<StudyPackResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [lastSubmissionData, setLastSubmissionData] = useState<{ notes?: string; file?: File } | null>(null);
 
   // Handle back navigation from study pages
   useEffect(() => {
@@ -24,6 +27,8 @@ export const AppPage: React.FC = () => {
   const handleSubmit = async (data: { notes?: string; file?: File }) => {
     try {
       setIsLoading(true);
+      setError(null);
+      setLastSubmissionData(data);
       
       let response;
       
@@ -49,8 +54,19 @@ export const AppPage: React.FC = () => {
         throw new Error('No content provided');
       }
 
+      // Check if response is HTML (error page) instead of JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server returned an invalid response. Please try again.');
+      }
+
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          throw new Error('Unable to process the request. Please check your file and try again.');
+        }
         throw new Error(errorData.error || 'Failed to generate study pack');
       }
 
@@ -61,6 +77,7 @@ export const AppPage: React.FC = () => {
       }
 
       setGeneratedContent(result);
+      setError(null);
     } catch (error) {
       console.error('Error generating study pack:', error);
       
@@ -72,19 +89,35 @@ export const AppPage: React.FC = () => {
         } else if (error.message.includes('file size')) {
           errorMessage = 'File size must be less than 10MB. Please upload a smaller file.';
         } else if (error.message.includes('No content found')) {
-          errorMessage = 'No text content could be extracted from the document. Please check the file.';
+          errorMessage = 'No text content could be extracted from the document. Please check the file and try again.';
         } else if (error.message.includes('Gemini API')) {
           errorMessage = 'AI service is temporarily unavailable. Please try again in a moment.';
+        } else if (error.message.includes('Server returned an invalid response')) {
+          errorMessage = 'Server encountered an error. Please try again or contact support if the issue persists.';
+        } else if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
         } else {
-          errorMessage += error.message;
+          errorMessage = error.message;
         }
       }
       
-      // Show user-friendly error message
-      alert(errorMessage);
+      setError(errorMessage);
+      setShowErrorModal(true);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    setShowErrorModal(false);
+    if (lastSubmissionData) {
+      handleSubmit(lastSubmissionData);
+    }
+  };
+
+  const handleCloseError = () => {
+    setShowErrorModal(false);
+    setError(null);
   };
 
   const handleNavigateToSummary = () => {
@@ -165,32 +198,23 @@ export const AppPage: React.FC = () => {
           </motion.div>
         )}
 
-        {/* Error State */}
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="alert alert-danger text-center my-4"
-          >
-            <strong>Error:</strong> {error}
-          </motion.div>
-        )}
-
         {/* Success State - Navigation Options */}
         {generatedContent && !isLoading && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
             className="mt-5"
           >
-            <div className="text-center mb-4">
-              <h2 className="gradient-text fs-3 fw-bold mb-2">
-                ✅ Study Pack Generated Successfully!
-              </h2>
-              <p className="text-bright-muted fs-5">
-                Choose how you'd like to study your material:
-              </p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-center mb-4"
+            >
+              <h2 className="text-bright fw-bold fs-3 mb-2">🎉 Study Pack Ready!</h2>
+              <p className="text-bright-muted">Choose how you'd like to study your material</p>
+            </motion.div>
 
             <div className="row g-4 justify-content-center">
               {/* Summary Card */}
@@ -211,9 +235,9 @@ export const AppPage: React.FC = () => {
                   <div className="mb-3">
                     <span className="display-4">📖</span>
                   </div>
-                  <h3 className="h5 fw-bold text-bright mb-3">Detailed Summary</h3>
+                  <h3 className="h5 fw-bold text-bright mb-3">Smart Summary</h3>
                   <p className="text-bright-muted mb-4">
-                    Structured overview with key points, definitions, and important concepts
+                    Organized overview with key points, definitions, and important concepts
                   </p>
                   <div className="mt-auto">
                     <button
@@ -324,42 +348,6 @@ export const AppPage: React.FC = () => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="text-center mt-5"
-            >
-              <div className="card-glass p-4" style={{
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2))',
-                border: '2px solid rgba(16, 185, 129, 0.3)',
-                borderRadius: '16px'
-              }}>
-                <h4 className="text-bright fw-bold mb-3 fs-5">📊 What's Inside Your Study Pack</h4>
-                <div className="row g-3 text-center">
-                  <div className="col-md-4 col-12">
-                    <div className="text-accent-indigo mb-2 fs-3 fw-bold">
-                      {generatedContent.summary?.keyPoints?.length || 5}
-                    </div>
-                    <div className="text-bright-muted small">Key Points</div>
-                  </div>
-                  <div className="col-md-4 col-12">
-                    <div className="text-accent-purple mb-2 fs-3 fw-bold">
-                      {generatedContent.flashcards?.length || 15}
-                    </div>
-                    <div className="text-bright-muted small">Flashcards</div>
-                  </div>
-                  <div className="col-md-4 col-12">
-                    <div className="text-accent-yellow mb-2 fs-3 fw-bold">
-                      {generatedContent.quiz?.length || 20}
-                    </div>
-                    <div className="text-bright-muted small">Quiz Questions</div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Generate New Pack */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
               transition={{ delay: 0.7 }}
               className="text-center mt-4"
             >
@@ -382,6 +370,14 @@ export const AppPage: React.FC = () => {
           </motion.div>
         )}
       </div>
+
+      {/* Error Modal */}
+      <ErrorModal
+        show={showErrorModal}
+        onClose={handleCloseError}
+        message={error || ''}
+        onRetry={lastSubmissionData ? handleRetry : undefined}
+      />
     </div>
   );
 }; 

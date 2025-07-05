@@ -451,7 +451,7 @@ export const QuizPage: React.FC = () => {
 
   return (
     <div className="min-vh-100 bg-gradient-main">
-      <div className="container-fluid px-3 py-4">
+      <div className="container-fluid px-3 py-3">
         <StudyNavigation
           currentPage="quiz"
           title="🧠 Quiz"
@@ -463,16 +463,51 @@ export const QuizPage: React.FC = () => {
           }
         />
 
-        {/* Navigation Controls */}
+        {/* Score Display - Moved to top and made smaller */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="card-glass p-2 text-center mb-3"
+          style={{
+            maxWidth: '400px',
+            margin: '0 auto',
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2))',
+            border: '2px solid rgba(16, 185, 129, 0.3)'
+          }}
+        >
+          <div className="row g-2 text-center">
+            <div className="col-4">
+              <div className="text-accent-indigo mb-1 fs-5 fw-bold">
+                {score}
+              </div>
+              <div className="text-bright-muted small">Correct</div>
+            </div>
+            <div className="col-4">
+              <div className="text-accent-purple mb-1 fs-5 fw-bold">
+                {answeredQuestions.length}
+              </div>
+              <div className="text-bright-muted small">Answered</div>
+            </div>
+            <div className="col-4">
+              <div className="text-accent-yellow mb-1 fs-5 fw-bold">
+                {answeredQuestions.length > 0 ? Math.round((score / answeredQuestions.length) * 100) : 0}%
+              </div>
+              <div className="text-bright-muted small">Accuracy</div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Navigation Controls - Made more compact */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="d-flex justify-content-between align-items-center mb-4"
+          className="d-flex justify-content-between align-items-center mb-3"
         >
           <div className="d-flex align-items-center gap-2">
             <span className="text-bright-muted small">Progress:</span>
-            <div className="progress" style={{ width: '200px', height: '8px' }}>
+            <div className="progress" style={{ width: '180px', height: '6px' }}>
               <div 
                 className="progress-bar" 
                 style={{ 
@@ -490,40 +525,40 @@ export const QuizPage: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Quiz Content */}
+        {/* Quiz Content - Made more compact */}
         <div className="row justify-content-center">
           <div className="col-12 col-lg-10 col-xl-8">
             <motion.div
               key={currentIndex}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="card-glass p-4 mb-4"
+              className="card-glass p-3 mb-3"
               style={{
                 background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(124, 58, 237, 0.2))',
                 border: '2px solid rgba(99, 102, 241, 0.3)'
               }}
             >
-              <div className="mb-4">
-                <h2 className="text-bright fw-bold fs-4 mb-3">
+              <div className="mb-3">
+                <h2 className="text-bright fw-bold fs-5 mb-2">
                   Question {currentIndex + 1}
                 </h2>
-                <p className="text-bright fs-5 lh-base mb-4">
+                <p className="text-bright fs-6 lh-base mb-3">
                   {currentQuestion.question}
                 </p>
               </div>
 
-              {/* Answer Options */}
-              <div className="d-grid gap-3">
+              {/* Answer Options - Made more compact */}
+              <div className="d-grid gap-2">
                 {currentQuestion.options.map((option, index) => {
                   const isSelected = selectedAnswer === option;
                   const isCorrect = option === currentQuestion.answer;
                   
                   let buttonStyle = {
-                    borderRadius: '12px',
-                    padding: '16px 20px',
-                    fontSize: '16px',
+                    borderRadius: '10px',
+                    padding: '12px 16px',
+                    fontSize: '14px',
                     textAlign: 'left' as const,
-                    minHeight: '60px',
+                    minHeight: '50px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -567,11 +602,11 @@ export const QuizPage: React.FC = () => {
                         <div 
                           className="d-flex align-items-center justify-content-center"
                           style={{
-                            width: '32px',
-                            height: '32px',
+                            width: '28px',
+                            height: '28px',
                             borderRadius: '50%',
                             background: 'rgba(255, 255, 255, 0.2)',
-                            fontSize: '14px',
+                            fontSize: '12px',
                             fontWeight: 'bold'
                           }}
                         >
@@ -582,15 +617,15 @@ export const QuizPage: React.FC = () => {
                       {showResult && isSelected && (
                         <div className="ms-2">
                           {isCorrect ? (
-                            <FiCheck size={24} color="#ffffff" />
+                            <FiCheck size={20} color="#ffffff" />
                           ) : (
-                            <FiX size={24} color="#ffffff" />
+                            <FiX size={20} color="#ffffff" />
                           )}
                         </div>
                       )}
                       {showResult && !isSelected && isCorrect && (
                         <div className="ms-2">
-                          <FiCheck size={24} color="#ffffff" />
+                          <FiCheck size={20} color="#ffffff" />
                         </div>
                       )}
                     </motion.button>
@@ -598,40 +633,40 @@ export const QuizPage: React.FC = () => {
                 })}
               </div>
 
-              {/* Explanation */}
+              {/* Explanation - Made more compact */}
               {showResult && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mt-4 p-3 rounded"
+                  className="mt-3 p-2 rounded"
                   style={{
                     background: 'rgba(59, 130, 246, 0.2)',
                     border: '1px solid rgba(59, 130, 246, 0.3)',
-                    borderRadius: '12px'
+                    borderRadius: '10px'
                   }}
                 >
-                  <h5 className="text-bright fw-bold mb-2 d-flex align-items-center gap-2">
+                  <h5 className="text-bright fw-bold mb-2 d-flex align-items-center gap-2 fs-6">
                     💡 Explanation
                   </h5>
-                  <p className="text-bright-muted mb-0">
+                  <p className="text-bright-muted mb-0 small">
                     {currentQuestion.explanation}
                   </p>
                 </motion.div>
               )}
 
-              {/* Next Button */}
+              {/* Next Button - Made more compact */}
               {showResult && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="mt-4 d-flex justify-content-center"
+                  className="mt-3 d-flex justify-content-center"
                 >
                   <button
                     onClick={handleNext}
                     className="btn btn-primary btn-lg px-4"
                     style={{
-                      borderRadius: '12px',
+                      borderRadius: '10px',
                       background: 'linear-gradient(135deg, #6366F1, #7C3AED)',
                       border: 'none',
                       fontWeight: '600'
@@ -640,12 +675,12 @@ export const QuizPage: React.FC = () => {
                     {currentIndex === quizQuestions.length - 1 ? (
                       <span className="d-flex align-items-center gap-2">
                         Finish Quiz
-                        <FiTrendingUp size={20} />
+                        <FiTrendingUp size={18} />
                       </span>
                     ) : (
                       <span className="d-flex align-items-center gap-2">
                         Next Question
-                        <FiChevronRight size={20} />
+                        <FiChevronRight size={18} />
                       </span>
                     )}
                   </button>
@@ -654,42 +689,6 @@ export const QuizPage: React.FC = () => {
             </motion.div>
           </div>
         </div>
-
-        {/* Score Display */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="card-glass p-4 text-center"
-          style={{
-            maxWidth: '500px',
-            margin: '0 auto',
-            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2))',
-            border: '2px solid rgba(16, 185, 129, 0.3)'
-          }}
-        >
-          <h4 className="text-bright fw-bold mb-3 fs-5">📊 Current Score</h4>
-          <div className="row g-3 text-center">
-            <div className="col-4">
-              <div className="text-accent-indigo mb-2 fs-3 fw-bold">
-                {score}
-              </div>
-              <div className="text-bright-muted small">Correct</div>
-            </div>
-            <div className="col-4">
-              <div className="text-accent-purple mb-2 fs-3 fw-bold">
-                {answeredQuestions.length}
-              </div>
-              <div className="text-bright-muted small">Answered</div>
-            </div>
-            <div className="col-4">
-              <div className="text-accent-yellow mb-2 fs-3 fw-bold">
-                {answeredQuestions.length > 0 ? Math.round((score / answeredQuestions.length) * 100) : 0}%
-              </div>
-              <div className="text-bright-muted small">Accuracy</div>
-            </div>
-          </div>
-        </motion.div>
       </div>
     </div>
   );

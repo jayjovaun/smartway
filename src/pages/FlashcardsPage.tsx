@@ -85,7 +85,7 @@ export const FlashcardsPage: React.FC = () => {
 
   return (
     <div className="min-vh-100 bg-gradient-main">
-      <div className="container-fluid px-3 py-4">
+      <div className="container-fluid px-3 py-3">
         <StudyNavigation
           currentPage="flashcards"
           title="📚 Flashcards"
@@ -96,13 +96,13 @@ export const FlashcardsPage: React.FC = () => {
           }
         />
 
-        <div className="d-flex justify-content-center mb-4">
+        <div className="d-flex justify-content-center mb-3">
           <div 
             className="flashcard-container position-relative"
             style={{ 
               width: '100%', 
-              maxWidth: '650px', 
-              height: '450px',
+              maxWidth: '600px', 
+              height: '320px',
               perspective: '1000px'
             }}
           >
@@ -115,29 +115,29 @@ export const FlashcardsPage: React.FC = () => {
               animate={{ rotateY: isFlipped ? 180 : 0 }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
               onClick={handleFlip}
-              whileHover={{ scale: 1.03, y: -5 }}
+              whileHover={{ scale: 1.02, y: -3 }}
               whileTap={{ scale: 0.98 }}
             >
               {/* Front Side - Question */}
               <div
-                className="flashcard-side position-absolute w-100 h-100 d-flex align-items-center justify-content-center p-4"
+                className="flashcard-side position-absolute w-100 h-100 d-flex align-items-center justify-content-center p-3"
                 style={{
                   backfaceVisibility: 'hidden',
                   background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(124, 58, 237, 0.3))',
                   border: '2px solid rgba(99, 102, 241, 0.5)',
-                  borderRadius: '24px',
+                  borderRadius: '20px',
                   backdropFilter: 'blur(20px)',
-                  boxShadow: '0 16px 48px rgba(99, 102, 241, 0.4)',
+                  boxShadow: '0 12px 40px rgba(99, 102, 241, 0.4)',
                   zIndex: isFlipped ? 1 : 2
                 }}
               >
                 <div className="text-center w-100">
-                  <div className="mb-4 text-accent-indigo">
-                    <span className="display-4">❓</span>
+                  <div className="mb-3 text-accent-indigo">
+                    <span className="display-5">❓</span>
                   </div>
-                  <h3 className="text-bright fw-bold mb-4 fs-3">Question</h3>
-                  <p className="text-bright fs-4 lh-base mb-4 px-3" style={{ 
-                    minHeight: '120px',
+                  <h3 className="text-bright fw-bold mb-3 fs-4">Question</h3>
+                  <p className="text-bright fs-5 lh-base mb-3 px-2" style={{ 
+                    minHeight: '80px',
                     color: '#ffffff !important',
                     textShadow: '0 2px 6px rgba(0,0,0,0.7)',
                     display: 'flex',
@@ -147,7 +147,7 @@ export const FlashcardsPage: React.FC = () => {
                     {currentCard.question}
                   </p>
                   <div className="d-flex align-items-center justify-content-center gap-2 text-bright">
-                    <FiRotateCw size={18} />
+                    <FiRotateCw size={16} />
                     <span className="small fw-medium" style={{ color: '#e5e7eb' }}>
                       Click to reveal answer
                     </span>
@@ -157,25 +157,25 @@ export const FlashcardsPage: React.FC = () => {
 
               {/* Back Side - Answer */}
               <div
-                className="flashcard-side position-absolute w-100 h-100 d-flex align-items-center justify-content-center p-4"
+                className="flashcard-side position-absolute w-100 h-100 d-flex align-items-center justify-content-center p-3"
                 style={{
                   backfaceVisibility: 'hidden',
                   transform: 'rotateY(180deg)',
                   background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(99, 102, 241, 0.3))',
                   border: '2px solid rgba(124, 58, 237, 0.5)',
-                  borderRadius: '24px',
+                  borderRadius: '20px',
                   backdropFilter: 'blur(20px)',
-                  boxShadow: '0 16px 48px rgba(124, 58, 237, 0.4)',
+                  boxShadow: '0 12px 40px rgba(124, 58, 237, 0.4)',
                   zIndex: isFlipped ? 2 : 1
                 }}
               >
                 <div className="text-center w-100">
-                  <div className="mb-4 text-accent-purple">
-                    <span className="display-4">💡</span>
+                  <div className="mb-3 text-accent-purple">
+                    <span className="display-5">💡</span>
                   </div>
-                  <h3 className="text-bright fw-bold mb-4 fs-3">Answer</h3>
-                  <p className="text-bright fs-4 lh-base mb-4 px-3" style={{ 
-                    minHeight: '120px',
+                  <h3 className="text-bright fw-bold mb-3 fs-4">Answer</h3>
+                  <p className="text-bright fs-5 lh-base mb-3 px-2" style={{ 
+                    minHeight: '80px',
                     color: '#ffffff !important',
                     textShadow: '0 2px 6px rgba(0,0,0,0.7)',
                     display: 'flex',
@@ -185,7 +185,7 @@ export const FlashcardsPage: React.FC = () => {
                     {currentCard.answer}
                   </p>
                   <div className="d-flex align-items-center justify-content-center gap-2 text-bright">
-                    <FiRotateCw size={18} />
+                    <FiRotateCw size={16} />
                     <span className="small fw-medium" style={{ color: '#e5e7eb' }}>
                       Click to see question
                     </span>
@@ -196,71 +196,71 @@ export const FlashcardsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Navigation Controls */}
+        {/* Navigation Controls - Made more compact */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="d-flex justify-content-center align-items-center gap-4 mb-4"
+          className="d-flex justify-content-center align-items-center gap-3 mb-3"
         >
           <motion.button
             onClick={handlePrevious}
             disabled={currentIndex === 0}
-            className="btn btn-outline-light btn-lg d-flex align-items-center gap-2"
+            className="btn btn-outline-light d-flex align-items-center gap-2"
             style={{
-              borderRadius: '12px',
-              padding: '12px 24px',
-              minWidth: '120px'
+              borderRadius: '10px',
+              padding: '8px 16px',
+              minWidth: '100px'
             }}
             whileHover={currentIndex > 0 ? { scale: 1.05 } : {}}
             whileTap={currentIndex > 0 ? { scale: 0.95 } : {}}
           >
-            <FiChevronLeft size={20} />
+            <FiChevronLeft size={18} />
             Previous
           </motion.button>
 
           <motion.button
             onClick={handleFlip}
-            className="btn btn-primary btn-lg d-flex align-items-center gap-2"
+            className="btn btn-primary d-flex align-items-center gap-2"
             style={{
-              borderRadius: '12px',
-              padding: '12px 24px',
-              minWidth: '120px',
+              borderRadius: '10px',
+              padding: '8px 16px',
+              minWidth: '100px',
               background: 'linear-gradient(135deg, #6366F1, #7C3AED)',
               border: 'none'
             }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <FiRotateCw size={20} />
+            <FiRotateCw size={18} />
             Flip
           </motion.button>
 
           <motion.button
             onClick={handleNext}
             disabled={currentIndex === flashcards.length - 1}
-            className="btn btn-outline-light btn-lg d-flex align-items-center gap-2"
+            className="btn btn-outline-light d-flex align-items-center gap-2"
             style={{
-              borderRadius: '12px',
-              padding: '12px 24px',
-              minWidth: '120px'
+              borderRadius: '10px',
+              padding: '8px 16px',
+              minWidth: '100px'
             }}
             whileHover={currentIndex < flashcards.length - 1 ? { scale: 1.05 } : {}}
             whileTap={currentIndex < flashcards.length - 1 ? { scale: 0.95 } : {}}
           >
             Next
-            <FiChevronRight size={20} />
+            <FiChevronRight size={18} />
           </motion.button>
         </motion.div>
 
-        {/* Progress Bar */}
+        {/* Progress Bar - Made more compact */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mb-4"
+          className="mb-3"
         >
-          <div className="progress" style={{ height: '8px', borderRadius: '4px' }}>
+          <div className="progress" style={{ height: '6px', borderRadius: '3px' }}>
             <div 
               className="progress-bar" 
               style={{ 
@@ -276,12 +276,12 @@ export const FlashcardsPage: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Study Tips */}
+        {/* Study Tips - Made more compact */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="card-glass p-4 text-center"
+          className="card-glass p-3 text-center"
           style={{
             maxWidth: '600px',
             margin: '0 auto',
@@ -289,8 +289,8 @@ export const FlashcardsPage: React.FC = () => {
             border: '2px solid rgba(16, 185, 129, 0.3)'
           }}
         >
-          <h4 className="text-bright fw-bold mb-3 fs-5">📚 Study Tips</h4>
-          <div className="row g-3 text-center">
+          <h4 className="text-bright fw-bold mb-2 fs-6">📚 Study Tips</h4>
+          <div className="row g-2 text-center">
             <div className="col-md-4 col-12">
               <div className="text-bright-muted small">
                 <strong>⌨️ Keyboard:</strong><br />

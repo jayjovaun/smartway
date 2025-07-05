@@ -8,9 +8,11 @@ const mammoth = require('mammoth');
 const fs = require('fs');
 const path = require('path');
 
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 
 console.log('CWD:', process.cwd());
+console.log('Files in CWD:', fs.readdirSync('.'));
+
 // Load environment variables
 dotenv.config({ path: './.env' });
 console.log('GEMINI_API_KEY after config:', process.env.GEMINI_API_KEY);
@@ -18,8 +20,10 @@ console.log('GEMINI_API_KEY after config:', process.env.GEMINI_API_KEY);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Enable CORS for all routes
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Configure multer for file uploads
 const upload = multer({
@@ -49,38 +53,72 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
 }
 
-// Extract text from uploaded files
+// Extract text from uploaded files with better error handling
 async function extractTextFromFile(filePath: string, mimetype: string): Promise<string> {
   try {
     switch (mimetype) {
       case 'application/pdf':
         const pdfBuffer = fs.readFileSync(filePath);
+        if (pdfBuffer.length === 0) {
+          throw new Error('PDF file is empty or corrupted');
+        }
         const pdfData = await pdfParse(pdfBuffer);
+        if (!pdfData.text || pdfData.text.trim().length === 0) {
+          throw new Error('No text content could be extracted from the PDF. The document may be image-based or encrypted.');
+        }
         return pdfData.text;
         
       case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
         const docxResult = await mammoth.extractRawText({ path: filePath });
+        if (!docxResult.value || docxResult.value.trim().length === 0) {
+          throw new Error('No text content could be extracted from the Word document.');
+        }
         return docxResult.value;
         
       case 'application/msword':
         // For older .doc files, mammoth can sometimes handle them
         try {
           const docResult = await mammoth.extractRawText({ path: filePath });
+          if (!docResult.value || docResult.value.trim().length === 0) {
+            throw new Error('No text content could be extracted from the document.');
+          }
           return docResult.value;
         } catch (error) {
-          throw new Error('Cannot process older .doc files. Please convert to .docx format.');
+          throw new Error('Cannot process older .doc files. Please convert to .docx format or save as PDF.');
         }
         
       case 'text/plain':
-        return fs.readFileSync(filePath, 'utf-8');
+        const textContent = fs.readFileSync(filePath, 'utf-8');
+        if (!textContent || textContent.trim().length === 0) {
+          throw new Error('Text file is empty.');
+        }
+        return textContent;
         
       default:
         throw new Error('Unsupported file type');
     }
+  } catch (error) {
+    // Re-throw with more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('ENOENT')) {
+        throw new Error('File could not be found or accessed. Please try uploading again.');
+      } else if (error.message.includes('Invalid PDF')) {
+        throw new Error('Invalid or corrupted PDF file. Please check the file and try again.');
+      } else if (error.message.includes('password')) {
+        throw new Error('Password-protected documents are not supported. Please remove the password and try again.');
+      } else {
+        throw error;
+      }
+    }
+    throw new Error('Failed to process the uploaded file. Please check the file format and try again.');
   } finally {
     // Clean up uploaded file
     if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+      try {
+        fs.unlinkSync(filePath);
+      } catch (cleanupError) {
+        console.error('Error cleaning up file:', cleanupError);
+      }
     }
   }
 }
@@ -183,41 +221,220 @@ CRITICAL REQUIREMENTS:
 6. Make questions that require understanding, not just memorization`;
 }
 
+// Test endpoint to verify API configuration
+app.get('/api/test', async (req: Request, res: Response): Promise<void> => {
+  res.setHeader('Content-Type', 'application/json');
+  
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    
+    if (!apiKey) {
+      res.status(500).json({ 
+        error: 'Missing Gemini API key',
+        solution: 'Create a .env file and add: GEMINI_API_KEY=your_api_key_here',
+        getKey: 'Get a free API key at: https://makersuite.google.com/app/apikey'
+      });
+      return;
+    }
+
+    // Test simple API call
+    const testPrompt = 'Respond with valid JSON: {"status": "working", "message": "API is functional"}';
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    
+    const response = await axios.post(geminiUrl, {
+      contents: [{ parts: [{ text: testPrompt }] }]
+    }, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000
+    });
+    
+    const data = response.data;
+    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    res.json({
+      success: true,
+      message: 'API is working correctly!',
+      testResponse: generatedText,
+      apiKeyConfigured: true
+    });
+    
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      solution: 'Check your GEMINI_API_KEY in the .env file',
+      statusCode: error.response?.status
+    });
+  }
+});
+
+// Global error handler for JSON responses
+const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error('Error caught by global handler:', err);
+  
+  // Ensure we always send JSON
+  res.setHeader('Content-Type', 'application/json');
+  
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  let statusCode = 500;
+  let message = 'An unexpected error occurred. Please try again.';
+
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    statusCode = 400;
+    message = 'File size too large. Please upload a file smaller than 10MB.';
+  } else if (err.message && err.message.includes('Invalid file type')) {
+    statusCode = 400;
+    message = err.message;
+  } else if (err.message && err.message.includes('Multer')) {
+    statusCode = 400;
+    message = 'File upload error. Please try again with a different file.';
+  } else if (err.message) {
+    message = err.message;
+  }
+
+  res.status(statusCode).json({ 
+    error: message,
+    timestamp: new Date().toISOString()
+  });
+};
+
+// Add a test endpoint to verify API setup
+app.get('/api/test', async (req: Request, res: Response): Promise<void> => {
+  res.setHeader('Content-Type', 'application/json');
+  
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    
+    if (!apiKey) {
+      res.status(500).json({ 
+        error: 'Missing Gemini API key. Please set GEMINI_API_KEY in your .env file',
+        help: 'Get a free API key at: https://makersuite.google.com/app/apikey'
+      });
+      return;
+    }
+
+    // Test simple API call
+    const testPrompt = 'Respond with valid JSON: {"status": "working", "message": "API is functional"}';
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    
+    const response = await axios.post(geminiUrl, {
+      contents: [{ parts: [{ text: testPrompt }] }]
+    }, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000
+    });
+    
+    const data = response.data;
+    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    res.json({
+      success: true,
+      apiConfigured: true,
+      testResponse: generatedText
+    });
+    
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      help: 'Check your GEMINI_API_KEY in the .env file'
+    });
+  }
+});
+
 // Handle document upload and text extraction
 app.post('/api/generate', upload.single('document'), async (req: Request, res: Response): Promise<void> => {
-  console.log('Received POST /api/generate');
+  console.log('\n=== NEW REQUEST TO /api/generate ===');
+  console.log('Timestamp:', new Date().toISOString());
+  
+  // Set content type early to ensure JSON response
+  res.setHeader('Content-Type', 'application/json');
   
   let notes: string = '';
   
   try {
+    console.log('Step 1: Processing input...');
+    
     // Check if we have a file upload or text input
     if (req.file) {
-      console.log('Processing uploaded file:', req.file.originalname, req.file.mimetype);
-      notes = await extractTextFromFile(req.file.path, req.file.mimetype);
-      console.log('Extracted text length:', notes.length);
+      console.log('File upload detected:');
+      console.log('- Original name:', req.file.originalname);
+      console.log('- MIME type:', req.file.mimetype);
+      console.log('- File size:', req.file.size, 'bytes');
+      console.log('- Temp path:', req.file.path);
+      
+      // Validate file exists and has content
+      if (!fs.existsSync(req.file.path)) {
+        console.error('ERROR: File not found at path:', req.file.path);
+        res.status(400).json({ error: 'Uploaded file could not be accessed. Please try again.' });
+        return;
+      }
+      
+      const fileStats = fs.statSync(req.file.path);
+      console.log('- Actual file size on disk:', fileStats.size, 'bytes');
+      
+      if (fileStats.size === 0) {
+        console.error('ERROR: File is empty');
+        fs.unlinkSync(req.file.path);
+        res.status(400).json({ error: 'Uploaded file is empty. Please check the file and try again.' });
+        return;
+      }
+      
+      console.log('Step 2: Extracting text from file...');
+      try {
+        notes = await extractTextFromFile(req.file.path, req.file.mimetype);
+        console.log('- Text extraction successful');
+        console.log('- Extracted text length:', notes.length);
+        console.log('- First 200 characters:', notes.substring(0, 200));
+      } catch (extractError: any) {
+        console.error('ERROR during text extraction:', extractError.message);
+        res.status(400).json({ error: extractError.message });
+        return;
+      }
+      
     } else if (req.body.notes) {
       notes = req.body.notes;
-      console.log('Using text input, length:', notes.length);
+      console.log('Text input detected:');
+      console.log('- Text length:', notes.length);
+      console.log('- First 200 characters:', notes.substring(0, 200));
     } else {
+      console.error('ERROR: No content provided');
       res.status(400).json({ error: 'Missing notes or document file' });
       return;
     }
     
     if (!notes || notes.trim().length === 0) {
+      console.error('ERROR: No content found after processing');
       res.status(400).json({ error: 'No content found in the provided input' });
       return;
     }
+
+    // Validate notes length (minimum for meaningful content)
+    if (notes.trim().length < 50) {
+      console.error('ERROR: Content too short:', notes.trim().length, 'characters');
+      res.status(400).json({ error: 'Content is too short. Please provide more detailed study material for better results.' });
+      return;
+    }
     
+    console.log('Step 3: Checking API configuration...');
     const apiKey = process.env.GEMINI_API_KEY;
-    console.log('Gemini API Key present:', !!apiKey);
+    console.log('- API Key present:', !!apiKey);
+    console.log('- API Key length:', apiKey ? apiKey.length : 0);
     
     if (!apiKey) {
+      console.error('ERROR: No Gemini API key found');
       res.status(500).json({ error: 'Missing Gemini API key. Get one free at https://makersuite.google.com/app/apikey' });
       return;
     }
     
+    console.log('Step 4: Creating prompt...');
     const prompt = createDynamicPrompt(notes);
+    console.log('- Prompt length:', prompt.length);
     
+    console.log('Step 5: Calling Gemini API...');
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const response = await axios.post(geminiUrl, {
@@ -229,121 +446,137 @@ app.post('/api/generate', upload.single('document'), async (req: Request, res: R
         topK: 40
       }
     }, {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 30000 // 30 second timeout
     });
     
-    console.log('Gemini API status:', response.status);
+    console.log('- Gemini API response status:', response.status);
     
     const data = response.data;
     const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
     
     if (!generatedText) {
-      res.status(500).json({ error: 'No response from Gemini' });
+      console.error('ERROR: No text generated by Gemini');
+      console.log('- Full response:', JSON.stringify(data, null, 2));
+      res.status(500).json({ error: 'No response from Gemini AI. Please try again.' });
       return;
     }
     
-    console.log('Generated text length:', generatedText.length);
+    console.log('Step 6: Processing response...');
+    console.log('- Generated text length:', generatedText.length);
+    console.log('- First 300 characters:', generatedText.substring(0, 300));
     
-    // Clean response
+    // Clean and parse the JSON response
     let cleanText = generatedText.trim();
     if (cleanText.startsWith('```json')) {
-      cleanText = cleanText.replace(/```json\s*/, '').replace(/\s*```$/, '');
+      cleanText = cleanText.replace(/```json\n?/, '').replace(/\n?```$/, '');
     } else if (cleanText.startsWith('```')) {
-      cleanText = cleanText.replace(/```\s*/, '').replace(/\s*```$/, '');
+      cleanText = cleanText.replace(/```\n?/, '').replace(/\n?```$/, '');
     }
     
+    console.log('Step 7: Parsing JSON...');
     let result;
     try {
       result = JSON.parse(cleanText);
-      console.log('Successfully parsed JSON. Quiz questions:', result.quiz?.length || 0);
-    } catch (parseErr) {
-      console.error('Parse error:', parseErr);
-      console.error('Raw response:', generatedText.substring(0, 500));
-      
-      // Smart fallback based on content analysis
-      const analysis = analyzeContent(notes);
-      const fallbackQuestions = [];
-      
-      for (let i = 0; i < analysis.questionCount; i++) {
-        fallbackQuestions.push({
-          question: `Based on the provided content, what is a key concept discussed? (Question ${i + 1})`,
-          options: [
-            "The main idea presented in the material",
-            "Unrelated information not in the content", 
-            "Generic knowledge not specific to the notes",
-            "Random details without context"
-          ],
-          answer: "The main idea presented in the material",
-          explanation: "This answer focuses on the actual content provided rather than external knowledge."
-        });
-      }
-      
-      result = {
-        summary: {
-          overview: "Study pack generated from your specific content. The material covers important concepts that require understanding and application.",
-          keyPoints: [
-            "Key concepts from your content",
-            "Important processes described", 
-            "Relationships between ideas",
-            "Practical applications mentioned",
-            "Critical insights provided"
-          ],
-          definitions: [
-            {"term": "Core Concept", "definition": "A fundamental idea from your material"},
-            {"term": "Key Process", "definition": "An important mechanism described in your content"},
-            {"term": "Main Principle", "definition": "A governing rule from your content"}
-          ],
-          importantConcepts: [
-            "Primary themes",
-            "Practical applications", 
-            "Key relationships",
-            "Critical analysis"
-          ]
-        },
-        flashcards: [
-          {"question": "What are the main concepts in this material?", "answer": "Core principles"},
-          {"question": "How do the key ideas connect?", "answer": "Through relationships"},
-          {"question": "What should you focus on first?", "answer": "Fundamental concepts"},
-          {"question": "How can you apply this knowledge?", "answer": "Practical scenarios"},
-          {"question": "What makes this topic important?", "answer": "Real-world relevance"},
-          {"question": "How do you remember key processes?", "answer": "Step-by-step approach"},
-          {"question": "What examples illustrate the concepts?", "answer": "Concrete applications"},
-          {"question": "How do you analyze this material?", "answer": "Critical thinking"},
-          {"question": "What patterns can you identify?", "answer": "Common themes"},
-          {"question": "How does this relate to other topics?", "answer": "Connections"},
-          {"question": "What questions should you ask?", "answer": "Analytical inquiries"},
-          {"question": "How do you test understanding?", "answer": "Practice problems"},
-          {"question": "What details are most important?", "answer": "Key specifics"},
-          {"question": "How do you organize this information?", "answer": "Logical structure"},
-          {"question": "What should you remember long-term?", "answer": "Core principles"}
-        ],
-        quiz: fallbackQuestions
-      };
+      console.log('- JSON parsing successful');
+      console.log('- Summary present:', !!result.summary);
+      console.log('- Flashcards count:', result.flashcards?.length || 0);
+      console.log('- Quiz questions count:', result.quiz?.length || 0);
+    } catch (parseError: any) {
+      console.error('ERROR: JSON Parse failed');
+      console.error('- Parse error:', parseError.message);
+      console.error('- Raw cleaned text (first 500 chars):', cleanText.substring(0, 500));
+      res.status(500).json({ error: 'AI response could not be processed. Please try again with different content.' });
+      return;
     }
     
+    // Validate the result structure
+    if (!result.summary || !result.flashcards || !result.quiz) {
+      console.error('ERROR: Invalid result structure');
+      console.log('- Has summary:', !!result.summary);
+      console.log('- Has flashcards:', !!result.flashcards);
+      console.log('- Has quiz:', !!result.quiz);
+      res.status(500).json({ error: 'Incomplete study pack generated. Please try again.' });
+      return;
+    }
+
+    // Additional validation
+    if (!Array.isArray(result.flashcards) || result.flashcards.length === 0) {
+      console.error('ERROR: No valid flashcards generated');
+      res.status(500).json({ error: 'No flashcards could be generated. Please provide more detailed content.' });
+      return;
+    }
+
+    if (!Array.isArray(result.quiz) || result.quiz.length === 0) {
+      console.error('ERROR: No valid quiz questions generated');
+      res.status(500).json({ error: 'No quiz questions could be generated. Please provide more detailed content.' });
+      return;
+    }
+    
+    console.log('SUCCESS: Study pack generated successfully');
+    console.log('=== END REQUEST ===\n');
     res.json(result);
     
   } catch (err: any) {
-    console.error('Error:', err);
+    console.error('\n!!! FATAL ERROR in /api/generate !!!');
+    console.error('Error type:', err.constructor.name);
+    console.error('Error message:', err.message);
+    console.error('Error stack:', err.stack?.substring(0, 500));
     
     // Clean up file if there was an error
     if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+      try {
+        fs.unlinkSync(req.file.path);
+        console.log('- Cleaned up uploaded file');
+      } catch (cleanupError: any) {
+        console.error('- Error cleaning up file:', cleanupError.message);
+      }
     }
     
-    if (err.response) {
-      console.error('Gemini API error:', err.response.status, err.response.data);
-      res.status(500).json({ error: `Gemini API error: ${err.response.status}` });
-    } else if (err.message.includes('Invalid file type')) {
-      res.status(400).json({ error: err.message });
-    } else if (err.message.includes('Cannot process older .doc files')) {
-      res.status(400).json({ error: err.message });
-    } else {
-      res.status(500).json({ error: 'Failed to generate study pack' });
+    // Ensure JSON response
+    if (!res.headersSent) {
+      res.setHeader('Content-Type', 'application/json');
+      
+      if (err.response) {
+        console.error('- Gemini API error details:', err.response.status, err.response.data);
+        if (err.response.status === 429) {
+          res.status(429).json({ error: 'AI service is temporarily busy. Please try again in a moment.' });
+        } else if (err.response.status === 403) {
+          res.status(500).json({ error: 'AI service configuration error. Please contact support.' });
+        } else {
+          res.status(500).json({ error: `AI service error. Please try again.` });
+        }
+      } else if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+        res.status(504).json({ error: 'Request timed out. Please try again with shorter content.' });
+      } else if (err.message.includes('Invalid file type')) {
+        res.status(400).json({ error: err.message });
+      } else if (err.message.includes('Cannot process older .doc files')) {
+        res.status(400).json({ error: err.message });
+      } else if (err.message.includes('No text content could be extracted')) {
+        res.status(400).json({ error: err.message });
+      } else if (err.message.includes('File could not be found')) {
+        res.status(400).json({ error: err.message });
+      } else if (err.message.includes('Content is too short')) {
+        res.status(400).json({ error: err.message });
+      } else {
+        res.status(500).json({ error: 'Failed to generate study pack. Please try again.' });
+      }
     }
+    
+    console.log('=== END ERROR REQUEST ===\n');
   }
 });
 
+// Add the global error handler
+app.use(errorHandler);
+
+// Handle 404 for API routes
+app.use('/api/*catchall', (req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.status(404).json({ error: 'API endpoint not found' });
+});
+
+// Start server
 app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`);
   console.log('Using Google Gemini API (Free!)');
