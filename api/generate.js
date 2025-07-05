@@ -102,11 +102,15 @@ export default async function handler(req, res) {
   try {
     let notes = '';
     
-    // Handle JSON input (text notes)
+    // Handle different input types
     if (req.body && req.body.notes) {
+      // Direct text input
       notes = req.body.notes;
+    } else if (req.body && req.body.extractedText) {
+      // Text extracted from uploaded file
+      notes = req.body.extractedText;
     } else {
-      res.status(400).json({ error: 'Missing notes. Please provide text content in the request body.' });
+      res.status(400).json({ error: 'Missing content. Please provide text content or upload a file.' });
       return;
     }
     
