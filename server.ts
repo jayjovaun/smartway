@@ -115,7 +115,7 @@ async function extractTextFromFile(filePath: string, mimetype: string): Promise<
     // Clean up uploaded file
     if (fs.existsSync(filePath)) {
       try {
-        fs.unlinkSync(filePath);
+      fs.unlinkSync(filePath);
       } catch (cleanupError) {
         console.error('Error cleaning up file:', cleanupError);
       }
@@ -385,7 +385,7 @@ app.post('/api/generate', upload.single('document'), async (req: Request, res: R
       
       console.log('Step 2: Extracting text from file...');
       try {
-        notes = await extractTextFromFile(req.file.path, req.file.mimetype);
+      notes = await extractTextFromFile(req.file.path, req.file.mimetype);
         console.log('- Text extraction successful');
         console.log('- Extracted text length:', notes.length);
         console.log('- First 200 characters:', notes.substring(0, 200));
@@ -411,7 +411,7 @@ app.post('/api/generate', upload.single('document'), async (req: Request, res: R
       res.status(400).json({ error: 'No content found in the provided input' });
       return;
     }
-
+    
     // Validate notes length (minimum for meaningful content)
     if (notes.trim().length < 50) {
       console.error('ERROR: Content too short:', notes.trim().length, 'characters');
@@ -526,7 +526,7 @@ app.post('/api/generate', upload.single('document'), async (req: Request, res: R
     // Clean up file if there was an error
     if (req.file && fs.existsSync(req.file.path)) {
       try {
-        fs.unlinkSync(req.file.path);
+      fs.unlinkSync(req.file.path);
         console.log('- Cleaned up uploaded file');
       } catch (cleanupError: any) {
         console.error('- Error cleaning up file:', cleanupError.message);
@@ -536,8 +536,8 @@ app.post('/api/generate', upload.single('document'), async (req: Request, res: R
     // Ensure JSON response
     if (!res.headersSent) {
       res.setHeader('Content-Type', 'application/json');
-      
-      if (err.response) {
+    
+    if (err.response) {
         console.error('- Gemini API error details:', err.response.status, err.response.data);
         if (err.response.status === 429) {
           res.status(429).json({ error: 'AI service is temporarily busy. Please try again in a moment.' });
@@ -548,17 +548,17 @@ app.post('/api/generate', upload.single('document'), async (req: Request, res: R
         }
       } else if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
         res.status(504).json({ error: 'Request timed out. Please try again with shorter content.' });
-      } else if (err.message.includes('Invalid file type')) {
-        res.status(400).json({ error: err.message });
-      } else if (err.message.includes('Cannot process older .doc files')) {
+    } else if (err.message.includes('Invalid file type')) {
+      res.status(400).json({ error: err.message });
+    } else if (err.message.includes('Cannot process older .doc files')) {
         res.status(400).json({ error: err.message });
       } else if (err.message.includes('No text content could be extracted')) {
         res.status(400).json({ error: err.message });
       } else if (err.message.includes('File could not be found')) {
         res.status(400).json({ error: err.message });
       } else if (err.message.includes('Content is too short')) {
-        res.status(400).json({ error: err.message });
-      } else {
+      res.status(400).json({ error: err.message });
+    } else {
         res.status(500).json({ error: 'Failed to generate study pack. Please try again.' });
       }
     }

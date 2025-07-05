@@ -154,11 +154,8 @@ npm run dev
 - **Smart Summary**: AI-generated overview with key points and definitions
 - **Interactive Flashcards**: Flip-style cards for active learning
 - **Adaptive Quiz**: Multiple-choice questions with explanations
-- **Document Upload**: Serverless file upload with Vercel Blob storage
-  - ✅ Text files (.txt) - Full support
-  - ⚠️ PDF & Word documents - Upload supported, copy-paste recommended for best results
+- **Document Upload**: Support for PDF, Word, and text files
 - **Mobile Responsive**: Works on all devices
-- **Serverless Architecture**: Optimized for Vercel deployment
 
 ## 🛠️ Tech Stack
 
@@ -191,20 +188,7 @@ GEMINI_API_KEY=your_gemini_api_key_here
 
 # Optional: Server port (default: 3001)
 PORT=3001
-
-# For Vercel Deployment: Automatically configured when you create a Blob store
-BLOB_READ_WRITE_TOKEN=your_vercel_blob_token_here
 ```
-
-### 📁 File Upload Setup (Vercel Blob)
-
-For file upload functionality on Vercel:
-
-1. **Create a Blob Store**: In your Vercel project dashboard, go to Storage > Connect Database > Blob
-2. **Automatic Configuration**: Vercel automatically adds the `BLOB_READ_WRITE_TOKEN` environment variable
-3. **Local Development**: Run `vercel env pull` to sync environment variables locally
-
-See `VERCEL_BLOB_SETUP.md` for detailed setup instructions.
 
 ## 🚨 Common Issues
 

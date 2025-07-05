@@ -10,14 +10,6 @@
       "dest": "/api/generate.js"
     },
     {
-      "src": "/api/file-upload",
-      "dest": "/api/file-upload.js"
-    },
-    {
-      "src": "/api/process-file",
-      "dest": "/api/process-file.js"
-    },
-    {
       "src": "/(.*)",
       "dest": "/$1"
     }

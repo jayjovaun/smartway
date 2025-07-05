@@ -15,14 +15,13 @@
     "start:prod": "node dist/server.js"
   },
   "dependencies": {
-    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/multer": "^2.0.0",
-    "@types/node": "^20.0.0",
-    "@types/node-fetch": "^2.6.12",
     "@types/pdf-parse": "^1.1.5",
     "@types/react-router-dom": "^5.3.3",
-    "@vercel/blob": "^1.1.1",
+    "@types/cors": "^2.8.19",
+    "@types/node-fetch": "^2.6.12",
+    "@types/node": "^20.0.0",
     "axios": "^1.10.0",
     "bootstrap": "^5.3.7",
     "cors": "^2.8.5",
