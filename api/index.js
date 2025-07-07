@@ -2,30 +2,10 @@ const axios = require('axios');
 const multer = require('multer');
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
+const fetch = require('node-fetch');
 
-// Configure multer for file uploads
-const upload = multer({
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/msword',
-      'text/plain'
-    ];
-    
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type. Only PDF, Word documents, and text files are allowed.'));
-    }
-  }
-});
-
-// Extract text from uploaded files
-async function extractTextFromFile(buffer, mimetype) {
+// Extract text from buffer (for Firebase Storage files)
+async function extractTextFromBuffer(buffer, mimetype) {
   try {
     switch (mimetype) {
       case 'application/pdf':
@@ -67,11 +47,37 @@ async function extractTextFromFile(buffer, mimetype) {
         throw new Error('Unsupported file type');
     }
   } catch (error) {
-    if (error.message.includes('password')) {
+    if (error.message && error.message.includes('password')) {
       throw new Error('Password-protected documents are not supported. Please remove the password and try again.');
     }
-    throw error;
+    throw error instanceof Error ? error : new Error('Failed to process the uploaded file.');
   }
+}
+
+// Configure multer for file uploads
+const upload = multer({
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword',
+      'text/plain'
+    ];
+    
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only PDF, Word documents, and text files are allowed.'));
+    }
+  }
+});
+
+// Extract text from uploaded files (legacy support)
+async function extractTextFromFile(buffer, mimetype) {
+  return extractTextFromBuffer(buffer, mimetype);
 }
 
 // Smart content analysis for dynamic quiz generation
@@ -241,8 +247,47 @@ export default async function handler(req, res) {
     if (pathname === '/api/generate' && req.method === 'POST') {
       let notes = '';
       
-      // Check if we have a file upload or text input
-      if (req.headers['content-type']?.includes('multipart/form-data')) {
+      // Check if we have a file URL, file upload, or text input
+      if (req.headers['content-type']?.includes('application/json')) {
+        // Handle JSON input (text or Supabase URL)
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        await new Promise(resolve => req.on('end', resolve));
+        
+        try {
+          const data = JSON.parse(body);
+          
+          if (data.fileURL) {
+            // Handle Supabase Storage URL
+            console.log('Processing Supabase URL:', data.fileURL);
+            
+            const response = await fetch(data.fileURL);
+            if (!response.ok) {
+              throw new Error(`Failed to download file: ${response.status}`);
+            }
+            
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const contentType = response.headers.get('content-type') || 'application/octet-stream';
+            
+            notes = await extractTextFromBuffer(buffer, contentType);
+          } else if (data.notes) {
+            // Handle text input
+            notes = data.notes;
+          } else {
+            res.status(400).json({ error: 'No content provided' });
+            return;
+          }
+        } catch (parseError) {
+          if (parseError.message.includes('Failed to download file')) {
+            res.status(400).json({ error: 'Failed to process the uploaded file. Please try again.' });
+            return;
+          }
+          res.status(400).json({ error: 'Invalid JSON or file processing error' });
+          return;
+        }
+      } else if (req.headers['content-type']?.includes('multipart/form-data')) {
+        // Handle traditional file upload (fallback)
         const file = await parseMultipartForm(req);
         
         if (file) {
@@ -252,18 +297,8 @@ export default async function handler(req, res) {
           return;
         }
       } else {
-        // Handle JSON input
-        let body = '';
-        req.on('data', chunk => { body += chunk; });
-        await new Promise(resolve => req.on('end', resolve));
-        
-        try {
-          const data = JSON.parse(body);
-          notes = data.notes;
-        } catch {
-          res.status(400).json({ error: 'Invalid JSON' });
-          return;
-        }
+        res.status(400).json({ error: 'Unsupported content type' });
+        return;
       }
       
       if (!notes || notes.trim().length === 0) {

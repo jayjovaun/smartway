@@ -13,7 +13,7 @@ export const AppPage: React.FC = () => {
   const [generatedContent, setGeneratedContent] = useState<StudyPackResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
-  const [lastSubmissionData, setLastSubmissionData] = useState<{ notes?: string; file?: File } | null>(null);
+  const [lastSubmissionData, setLastSubmissionData] = useState<{ notes?: string; file?: File; fileURL?: string } | null>(null);
 
   // Handle back navigation from study pages
   useEffect(() => {
@@ -24,7 +24,7 @@ export const AppPage: React.FC = () => {
     }
   }, [location.state]);
 
-  const handleSubmit = async (data: { notes?: string; file?: File }) => {
+  const handleSubmit = async (data: { notes?: string; file?: File; fileURL?: string }) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -32,14 +32,14 @@ export const AppPage: React.FC = () => {
       
       let response;
       
-      if (data.file) {
-        // Handle file upload
-        const formData = new FormData();
-        formData.append('document', data.file);
-        
+      if (data.fileURL) {
+        // Handle file URL from Firebase Storage
         response = await fetch('/api/generate', {
           method: 'POST',
-          body: formData
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ fileURL: data.fileURL })
         });
       } else if (data.notes) {
         // Handle text input

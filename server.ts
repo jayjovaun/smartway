@@ -7,8 +7,10 @@ const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const fs = require('fs');
 const path = require('path');
+const fetch = require('node-fetch');
 
 import { Request, Response, NextFunction } from 'express';
+import { Response as FetchResponse } from 'node-fetch';
 
 console.log('CWD:', process.cwd());
 console.log('Files in CWD:', fs.readdirSync('.'));
@@ -51,6 +53,62 @@ const upload = multer({
 const uploadsDir = 'uploads';
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
+}
+
+// Extract text from buffer (for Firebase Storage files)
+async function extractTextFromBuffer(buffer: Buffer, mimetype: string): Promise<string> {
+  try {
+    switch (mimetype) {
+      case 'application/pdf':
+        if (buffer.length === 0) {
+          throw new Error('PDF file is empty or corrupted');
+        }
+        const pdfData = await pdfParse(buffer);
+        if (!pdfData.text || pdfData.text.trim().length === 0) {
+          throw new Error('No text content could be extracted from the PDF. The document may be image-based or encrypted.');
+        }
+        return pdfData.text;
+        
+      case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+        const docxResult = await mammoth.extractRawText({ buffer });
+        if (!docxResult.value || docxResult.value.trim().length === 0) {
+          throw new Error('No text content could be extracted from the Word document.');
+        }
+        return docxResult.value;
+        
+      case 'application/msword':
+        // For older .doc files, mammoth can sometimes handle them
+        try {
+          const docResult = await mammoth.extractRawText({ buffer });
+          if (!docResult.value || docResult.value.trim().length === 0) {
+            throw new Error('No text content could be extracted from the document.');
+          }
+          return docResult.value;
+        } catch (error) {
+          throw new Error('Cannot process older .doc files. Please convert to .docx format or save as PDF.');
+        }
+        
+      case 'text/plain':
+        const textContent = buffer.toString('utf-8');
+        if (!textContent || textContent.trim().length === 0) {
+          throw new Error('Text file is empty.');
+        }
+        return textContent;
+        
+      default:
+        throw new Error('Unsupported file type');
+    }
+  } catch (error: any) {
+    // Re-throw with more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('password')) {
+        throw new Error('Password-protected documents are not supported. Please remove the password and try again.');
+      } else {
+        throw error;
+      }
+    }
+    throw new Error('Failed to process the uploaded file. Please check the file format and try again.');
+  }
 }
 
 // Extract text from uploaded files with better error handling
@@ -358,8 +416,36 @@ app.post('/api/generate', upload.single('document'), async (req: Request, res: R
   try {
     console.log('Step 1: Processing input...');
     
-    // Check if we have a file upload or text input
-    if (req.file) {
+    // Check if we have a file URL from Supabase Storage
+    if (req.body.fileURL) {
+      console.log('File URL detected:', req.body.fileURL);
+      
+      try {
+        // Download the file from Supabase Storage
+        const response = await fetch(req.body.fileURL);
+        if (!response.ok) {
+          throw new Error(`Failed to download file: ${response.status}`);
+        }
+        
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const contentType = response.headers.get('content-type') || 'application/octet-stream';
+        
+        console.log('- File downloaded successfully');
+        console.log('- Content type:', contentType);
+        console.log('- File size:', buffer.length, 'bytes');
+        
+        // Extract text from buffer
+        notes = await extractTextFromBuffer(buffer, contentType);
+        console.log('- Text extraction successful');
+        console.log('- Extracted text length:', notes.length);
+        console.log('- First 200 characters:', notes.substring(0, 200));
+      } catch (downloadError: any) {
+        console.error('ERROR downloading/processing file from URL:', downloadError.message);
+        res.status(400).json({ error: 'Failed to process the uploaded file. Please try again.' });
+        return;
+      }
+    } else if (req.file) {
       console.log('File upload detected:');
       console.log('- Original name:', req.file.originalname);
       console.log('- MIME type:', req.file.mimetype);

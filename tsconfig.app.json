@@ -4,12 +4,12 @@
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "NodeNext",
+    "module": "ESNext",
     "skipLibCheck": true,
     "noEmit": true,
 
     /* Bundler mode */
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "bundler",
 
     /* Linting */
     "strict": true,
@@ -26,7 +26,8 @@
       "@utils/*": ["utils/*"],
       "@assets/*": ["assets/*"],
       "@api/*": ["api/*"],
-      "@pages/*": ["pages/*"]
+      "@pages/*": ["pages/*"],
+      "@lib/*": ["lib/*"]
     },
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true,

@@ -1,97 +1,47 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiUpload, FiFileText, FiX, FiFile } from 'react-icons/fi';
+import { FiFileText, FiUpload } from 'react-icons/fi';
+import { FileDropUpload } from './FileDropUpload';
+import { UploadResult } from '@utils/uploadFile';
 
 interface InputFormProps {
-  onSubmit: (data: { notes?: string; file?: File }) => void;
+  onSubmit: (data: { notes?: string; file?: File; fileURL?: string }) => void;
   isLoading: boolean;
 }
 
 export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => {
   const [notes, setNotes] = useState('');
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [dragActive, setDragActive] = useState(false);
+  const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [inputMethod, setInputMethod] = useState<'text' | 'file'>('text');
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputMethod === 'text' && notes.trim()) {
       onSubmit({ notes: notes.trim() });
-    } else if (inputMethod === 'file' && uploadedFile) {
-      onSubmit({ file: uploadedFile });
+    } else if (inputMethod === 'file' && uploadResult) {
+      onSubmit({ fileURL: uploadResult.downloadURL });
     }
   };
 
-  const handleDrag = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      handleFileSelect(file);
-    }
-  }, []);
-
-  const handleFileSelect = (file: File) => {
-    const allowedTypes = [
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/msword',
-      'text/plain'
-    ];
-
-    // Check file type
-    if (!allowedTypes.includes(file.type)) {
-      console.warn('Invalid file type:', file.type);
-      return;
-    }
-
-    // Check file size
-    if (file.size > 10 * 1024 * 1024) { // 10MB
-      console.warn('File too large:', file.size);
-      return;
-    }
-
-    // Check if file is empty
-    if (file.size === 0) {
-      console.warn('File is empty');
-      return;
-    }
-
-    setUploadedFile(file);
+  const handleUploadComplete = (result: UploadResult) => {
+    setUploadResult(result);
+    setUploadError(null);
     setInputMethod('file');
   };
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      handleFileSelect(e.target.files[0]);
-    }
+  const handleUploadError = (error: string) => {
+    setUploadError(error);
+    setUploadResult(null);
   };
 
-  const removeFile = () => {
-    setUploadedFile(null);
+  const resetUpload = () => {
+    setUploadResult(null);
+    setUploadError(null);
     setInputMethod('text');
   };
 
-  const getFileIcon = (file: File) => {
-    if (file.type === 'application/pdf') return '📄';
-    if (file.type.includes('word')) return '📝';
-    if (file.type === 'text/plain') return '📋';
-    return '📁';
-  };
-
-  const canSubmit = (inputMethod === 'text' && notes.trim()) || (inputMethod === 'file' && uploadedFile);
+  const canSubmit = (inputMethod === 'text' && notes.trim()) || (inputMethod === 'file' && uploadResult);
 
   return (
     <div className="card-glass p-4 mx-auto" style={{ maxWidth: '800px' }}>
@@ -158,95 +108,18 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => 
           </div>
         ) : (
           /* File Upload Section */
-          <div className="mb-4">
-            <label className="form-label text-bright fw-semibold fs-6 mb-3">
-              Upload Your Document
-            </label>
-            
-            {!uploadedFile ? (
-              <div
-                className={`border-2 border-dashed rounded text-center transition-all ${
-                  dragActive 
-                    ? 'border-primary' 
-                    : 'border-secondary'
-                }`}
-                style={{
-                  borderRadius: '12px',
-                  background: dragActive 
-                    ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(124, 58, 237, 0.15))'
-                    : 'rgba(31, 41, 55, 0.5)',
-                  backdropFilter: 'blur(10px)',
-                  minHeight: '200px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  padding: '2rem 1rem'
-                }}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-              >
-                <motion.div
-                  animate={{ scale: dragActive ? 1.1 : 1 }}
-                  className="text-center"
-                >
-                  <FiUpload size={48} className="text-primary mb-3" />
-                  <h5 className="text-bright mb-2">Drop your document here</h5>
-                  <p className="text-bright-muted mb-3">
-                    or click to browse files
-                  </p>
-                  <input
-                    type="file"
-                    accept=".pdf,.docx,.doc,.txt"
-                    onChange={handleFileInput}
-                    className="d-none"
-                    id="fileInput"
-                    disabled={isLoading}
-                  />
-                  <label
-                    htmlFor="fileInput"
-                    className="btn btn-outline-primary px-4 py-2"
-                    style={{ borderRadius: '12px', fontWeight: '600' }}
-                  >
-                    <FiFile className="me-2" />
-                    Choose File
-                  </label>
-                  <div className="text-bright-muted small mt-3">
-                    Supports: PDF, Word (.docx, .doc), Text files (max 10MB)
-                  </div>
-                </motion.div>
-              </div>
-            ) : (
-              /* Uploaded File Display */
-              <div
-                className="border border-success rounded bg-success bg-opacity-10 p-3"
-                style={{ borderRadius: '12px' }}
-              >
-                <div className="d-flex align-items-center justify-content-between">
-                  <div className="d-flex align-items-center gap-3">
-                    <span style={{ fontSize: '24px' }}>{getFileIcon(uploadedFile)}</span>
-                    <div>
-                      <div className="text-bright fw-semibold">{uploadedFile.name}</div>
-                      <div className="text-bright-muted small">
-                        {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={removeFile}
-                    className="btn btn-sm btn-outline-danger"
-                    style={{ borderRadius: '8px' }}
-                    disabled={isLoading}
-                  >
-                    <FiX size={16} />
-                  </button>
-                </div>
+          <>
+            <FileDropUpload
+              onUploadComplete={handleUploadComplete}
+              onUploadError={handleUploadError}
+              disabled={isLoading}
+            />
+            {uploadError && (
+              <div className="alert alert-danger mb-3" role="alert">
+                {uploadError}
               </div>
             )}
-          </div>
+          </>
         )}
 
         {/* Submit Button */}
