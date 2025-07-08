@@ -632,11 +632,16 @@ app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(buildPath, 'index.html'));
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 SmartWay Server running on http://localhost:${PORT}`);
-  console.log('📚 Frontend served from:', buildPath);
-  console.log('🔥 API endpoints available at /api/*');
-  console.log('🤖 Using Google Gemini API (Free!)');
-  console.log('📄 Document upload supported: PDF, DOCX, DOC, TXT (max 10MB)');
-}); 
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`🚀 SmartWay Server running on http://localhost:${PORT}`);
+    console.log('📚 Frontend served from:', buildPath);
+    console.log('🔥 API endpoints available at /api/*');
+    console.log('🤖 Using Google Gemini API (Free!)');
+    console.log('📄 Document upload supported: PDF, DOCX, DOC, TXT (max 10MB)');
+  });
+}
+
+// Export for Vercel
+module.exports = app; 
