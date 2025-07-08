@@ -247,39 +247,33 @@ export default async function handler(req, res) {
     if (pathname === '/api/generate' && req.method === 'POST') {
       let notes = '';
       
-      // Check if we have a file URL, file upload, or text input
+      // Only allow JSON input (text or Supabase URL)
       if (req.headers['content-type']?.includes('application/json')) {
-        // Handle JSON input (text or Supabase URL)
         let body = '';
         req.on('data', chunk => { body += chunk; });
         await new Promise(resolve => req.on('end', resolve));
-        
         try {
           const data = JSON.parse(body);
-          
           if (data.fileURL) {
             // Handle Supabase Storage URL
             console.log('Processing Supabase URL:', data.fileURL);
-            
             const response = await fetch(data.fileURL);
             if (!response.ok) {
               throw new Error(`Failed to download file: ${response.status}`);
             }
-            
             const arrayBuffer = await response.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
             const contentType = response.headers.get('content-type') || 'application/octet-stream';
-            
             notes = await extractTextFromBuffer(buffer, contentType);
           } else if (data.notes) {
             // Handle text input
             notes = data.notes;
           } else {
-            res.status(400).json({ error: 'No content provided' });
+            res.status(400).json({ error: 'No content provided. Please provide fileURL or notes in the request body.' });
             return;
           }
         } catch (parseError) {
-          if (parseError.message.includes('Failed to download file')) {
+          if (parseError.message && parseError.message.includes('Failed to download file')) {
             res.status(400).json({ error: 'Failed to process the uploaded file. Please try again.' });
             return;
           }
@@ -287,17 +281,11 @@ export default async function handler(req, res) {
           return;
         }
       } else if (req.headers['content-type']?.includes('multipart/form-data')) {
-        // Handle traditional file upload (fallback)
-        const file = await parseMultipartForm(req);
-        
-        if (file) {
-          notes = await extractTextFromFile(file.buffer, file.mimetype);
-        } else {
-          res.status(400).json({ error: 'No file uploaded' });
-          return;
-        }
+        // Block direct file uploads in production/serverless
+        res.status(400).json({ error: 'Direct file uploads are not supported. Please upload your file to Supabase or another storage provider and provide the file URL.' });
+        return;
       } else {
-        res.status(400).json({ error: 'Unsupported content type' });
+        res.status(400).json({ error: 'Unsupported content type. Only application/json is accepted.' });
         return;
       }
       
