@@ -1,8 +1,9 @@
-const axios = require('axios');
-const multer = require('multer');
-const pdfParse = require('pdf-parse');
-const mammoth = require('mammoth');
-const fetch = require('node-fetch');
+// NOTE: Only JSON requests with { fileURL } or { notes } are supported. Direct file uploads (multipart/form-data) are NOT supported on Vercel.
+import axios from 'axios';
+import multer from 'multer';
+import pdfParse from 'pdf-parse';
+import mammoth from 'mammoth';
+import fetch from 'node-fetch';
 
 console.log('🚀 API Handler loaded successfully');
 console.log('Environment check:', {
