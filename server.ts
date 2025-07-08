@@ -12,20 +12,26 @@ const fetch = require('node-fetch');
 import { Request, Response, NextFunction } from 'express';
 import { Response as FetchResponse } from 'node-fetch';
 
+console.log('🚀 Starting SmartWay Server...');
 console.log('CWD:', process.cwd());
 console.log('Files in CWD:', fs.readdirSync('.'));
 
 // Load environment variables
 dotenv.config({ path: './.env' });
-console.log('GEMINI_API_KEY after config:', process.env.GEMINI_API_KEY);
+console.log('Environment loaded. API Key present:', !!process.env.GEMINI_API_KEY);
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // Enable CORS for all routes
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Serve static files from the React app build
+const buildPath = path.join(__dirname, 'dist');
+console.log('Serving static files from:', buildPath);
+app.use(express.static(buildPath));
 
 // Configure multer for file uploads
 const upload = multer({
@@ -616,14 +622,21 @@ app.post('/api/generate', async (req: Request, res: Response): Promise<void> => 
 app.use(errorHandler);
 
 // Handle 404 for API routes
-app.use('/api/*catchall', (req: Request, res: Response) => {
+app.use('/api/*', (req: Request, res: Response) => {
   res.setHeader('Content-Type', 'application/json');
   res.status(404).json({ error: 'API endpoint not found' });
 });
 
+// Serve React App for all other routes (catch-all)
+app.get('*', (req: Request, res: Response) => {
+  res.sendFile(path.join(buildPath, 'index.html'));
+});
+
 // Start server
 app.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
-  console.log('Using Google Gemini API (Free!)');
-  console.log('Document upload supported: PDF, DOCX, DOC, TXT (max 10MB)');
+  console.log(`🚀 SmartWay Server running on http://localhost:${PORT}`);
+  console.log('📚 Frontend served from:', buildPath);
+  console.log('🔥 API endpoints available at /api/*');
+  console.log('🤖 Using Google Gemini API (Free!)');
+  console.log('📄 Document upload supported: PDF, DOCX, DOC, TXT (max 10MB)');
 }); 
