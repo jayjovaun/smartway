@@ -404,38 +404,30 @@ app.get('/api/test', async (req: Request, res: Response): Promise<void> => {
 });
 
 // Handle document upload and text extraction
-app.post('/api/generate', upload.single('document'), async (req: Request, res: Response): Promise<void> => {
+app.post('/api/generate', async (req: Request, res: Response): Promise<void> => {
   console.log('\n=== NEW REQUEST TO /api/generate ===');
   console.log('Timestamp:', new Date().toISOString());
-  
-  // Set content type early to ensure JSON response
   res.setHeader('Content-Type', 'application/json');
-  
+
   let notes: string = '';
-  
+
   try {
     console.log('Step 1: Processing input...');
-    
-    // Check if we have a file URL from Supabase Storage
-    if (req.body.fileURL) {
+
+    // Only allow fileURL or notes in production (Vercel/serverless)
+    if (req.body && req.body.fileURL) {
       console.log('File URL detected:', req.body.fileURL);
-      
       try {
-        // Download the file from Supabase Storage
         const response = await fetch(req.body.fileURL);
         if (!response.ok) {
           throw new Error(`Failed to download file: ${response.status}`);
         }
-        
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         const contentType = response.headers.get('content-type') || 'application/octet-stream';
-        
         console.log('- File downloaded successfully');
         console.log('- Content type:', contentType);
         console.log('- File size:', buffer.length, 'bytes');
-        
-        // Extract text from buffer
         notes = await extractTextFromBuffer(buffer, contentType);
         console.log('- Text extraction successful');
         console.log('- Extracted text length:', notes.length);
@@ -445,66 +437,33 @@ app.post('/api/generate', upload.single('document'), async (req: Request, res: R
         res.status(400).json({ error: 'Failed to process the uploaded file. Please try again.' });
         return;
       }
-    } else if (req.file) {
-      console.log('File upload detected:');
-      console.log('- Original name:', req.file.originalname);
-      console.log('- MIME type:', req.file.mimetype);
-      console.log('- File size:', req.file.size, 'bytes');
-      console.log('- Temp path:', req.file.path);
-      
-      // Validate file exists and has content
-      if (!fs.existsSync(req.file.path)) {
-        console.error('ERROR: File not found at path:', req.file.path);
-        res.status(400).json({ error: 'Uploaded file could not be accessed. Please try again.' });
-        return;
-      }
-      
-      const fileStats = fs.statSync(req.file.path);
-      console.log('- Actual file size on disk:', fileStats.size, 'bytes');
-      
-      if (fileStats.size === 0) {
-        console.error('ERROR: File is empty');
-        fs.unlinkSync(req.file.path);
-        res.status(400).json({ error: 'Uploaded file is empty. Please check the file and try again.' });
-        return;
-      }
-      
-      console.log('Step 2: Extracting text from file...');
-      try {
-      notes = await extractTextFromFile(req.file.path, req.file.mimetype);
-        console.log('- Text extraction successful');
-        console.log('- Extracted text length:', notes.length);
-        console.log('- First 200 characters:', notes.substring(0, 200));
-      } catch (extractError: any) {
-        console.error('ERROR during text extraction:', extractError.message);
-        res.status(400).json({ error: extractError.message });
-        return;
-      }
-      
-    } else if (req.body.notes) {
+    } else if (req.body && req.body.notes) {
       notes = req.body.notes;
       console.log('Text input detected:');
       console.log('- Text length:', notes.length);
       console.log('- First 200 characters:', notes.substring(0, 200));
+    } else if (req.file || (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data'))) {
+      // Block direct file uploads in production/serverless
+      console.error('ERROR: Direct file uploads are not supported on Vercel/serverless. Please upload to Supabase/Blob storage and send the file URL.');
+      res.status(400).json({ error: 'Direct file uploads are not supported. Please upload your file to Supabase or another storage provider and provide the file URL.' });
+      return;
     } else {
       console.error('ERROR: No content provided');
-      res.status(400).json({ error: 'Missing notes or document file' });
+      res.status(400).json({ error: 'Missing notes or fileURL in request body.' });
       return;
     }
-    
+
     if (!notes || notes.trim().length === 0) {
       console.error('ERROR: No content found after processing');
       res.status(400).json({ error: 'No content found in the provided input' });
       return;
     }
-    
-    // Validate notes length (minimum for meaningful content)
     if (notes.trim().length < 50) {
       console.error('ERROR: Content too short:', notes.trim().length, 'characters');
       res.status(400).json({ error: 'Content is too short. Please provide more detailed study material for better results.' });
       return;
     }
-    
+
     console.log('Step 3: Checking API configuration...');
     const apiKey = process.env.GEMINI_API_KEY;
     console.log('- API Key present:', !!apiKey);

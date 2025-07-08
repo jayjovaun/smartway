@@ -208,3 +208,14 @@ If you're still having issues:
 ---
 
 **Need an API key?** Get one free at [Google AI Studio](https://makersuite.google.com/app/apikey) - no credit card required!
+
+## Important: File Uploads on Vercel
+
+**Direct file uploads to `/api/generate` are NOT supported on Vercel deployments.**
+
+- Vercel serverless functions have a strict 4.5MB request body size limit.
+- To process files, users must upload them to Supabase (or another storage provider) first.
+- After uploading, send the file URL to `/api/generate` as JSON.
+- Text input (notes) can still be sent as JSON directly.
+
+If you attempt to upload files directly to `/api/generate`, you will receive an error. This is a platform limitation.

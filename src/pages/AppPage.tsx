@@ -32,8 +32,8 @@ export const AppPage: React.FC = () => {
       
       let response;
       
+      // Only allow fileURL (from Supabase) or notes (text input)
       if (data.fileURL) {
-        // Handle file URL from Firebase Storage
         response = await fetch('/api/generate', {
           method: 'POST',
           headers: {
@@ -42,7 +42,6 @@ export const AppPage: React.FC = () => {
           body: JSON.stringify({ fileURL: data.fileURL })
         });
       } else if (data.notes) {
-        // Handle text input
         response = await fetch('/api/generate', {
           method: 'POST',
           headers: {
@@ -51,7 +50,7 @@ export const AppPage: React.FC = () => {
           body: JSON.stringify({ notes: data.notes })
         });
       } else {
-        throw new Error('No content provided');
+        throw new Error('No content provided. Please upload your file to Supabase or enter notes.');
       }
 
       // Check if response is HTML (error page) instead of JSON

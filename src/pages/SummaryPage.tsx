@@ -50,6 +50,7 @@ export const SummaryPage: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        // Only send JSON with notes or fileURL. No direct file uploads supported.
         body: JSON.stringify({
           prompt: `Based on the study material context, explain what "${concept}" means in 2-3 clear sentences. Focus on its definition and importance.`,
           type: 'concept'
