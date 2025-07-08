@@ -29,9 +29,28 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Serve static files from the React app build
-const buildPath = path.join(__dirname, 'dist');
-console.log('Serving static files from:', buildPath);
-app.use(express.static(buildPath));
+console.log('🔍 Debugging static file serving...');
+console.log('__dirname:', __dirname);
+console.log('process.cwd():', process.cwd());
+
+// Check what files exist in various locations
+const locations = [__dirname, process.cwd()];
+locations.forEach(loc => {
+  console.log(`📁 Files in ${loc}:`, fs.existsSync(loc) ? fs.readdirSync(loc) : 'Not found');
+});
+
+// For Vercel, the dist folder should be at the root level
+const buildPath = path.join(process.cwd(), 'dist');
+console.log('📦 Build path:', buildPath);
+console.log('📦 Build path exists:', fs.existsSync(buildPath));
+
+if (fs.existsSync(buildPath)) {
+  console.log('📁 Files in dist:', fs.readdirSync(buildPath));
+  app.use(express.static(buildPath));
+} else {
+  console.warn('⚠️ Dist folder not found, serving from current directory');
+  app.use(express.static(process.cwd()));
+}
 
 // Configure multer for file uploads
 const upload = multer({
@@ -629,7 +648,23 @@ app.use('/api/*', (req: Request, res: Response) => {
 
 // Serve React App for all other routes (catch-all)
 app.get('*', (req: Request, res: Response) => {
-  res.sendFile(path.join(buildPath, 'index.html'));
+  const indexPath = path.join(buildPath, 'index.html');
+  console.log('🏠 Serving index.html from:', indexPath);
+  console.log('🏠 Index.html exists:', fs.existsSync(indexPath));
+  
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    console.error('❌ index.html not found at:', indexPath);
+    // Try alternative location
+    const altIndexPath = path.join(process.cwd(), 'index.html');
+    if (fs.existsSync(altIndexPath)) {
+      console.log('✅ Found index.html at alternative location:', altIndexPath);
+      res.sendFile(altIndexPath);
+    } else {
+      res.status(404).send(`Frontend not found. Looked for index.html at: ${indexPath} and ${altIndexPath}`);
+    }
+  }
 });
 
 // For local development
