@@ -205,306 +205,103 @@ function parseMultipartForm(req) {
 
 // Main API handler
 export default async function handler(req, res) {
-  console.log('🔥 Handler invoked:', {
-    method: req.method,
-    url: req.url,
-    timestamp: new Date().toISOString(),
-    headers: Object.keys(req.headers)
-  });
+  console.log('🚀 Minimal API Handler starting...');
 
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Content-Type', 'application/json');
-  
-  if (req.method === 'OPTIONS') {
-    console.log('✅ OPTIONS request handled');
-    res.status(200).end();
-    return;
-  }
+  console.log('📍 Handler invoked at:', new Date().toISOString());
+  console.log('📥 Method:', req.method);
+  console.log('📥 URL:', req.url);
   
   try {
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Content-Type', 'application/json');
+    
+    if (req.method === 'OPTIONS') {
+      console.log('✅ OPTIONS request handled');
+      return res.status(200).end();
+    }
+    
     const { pathname } = new URL(req.url, `http://${req.headers.host}`);
     console.log('📍 Pathname:', pathname);
     
-    // Handle /api/test endpoint
+    // Handle /api/test endpoint - MINIMAL VERSION
     if (pathname === '/api/test' && req.method === 'GET') {
       console.log('🧪 Test endpoint called');
       
       const apiKey = process.env.GEMINI_API_KEY;
       console.log('🔑 API Key check:', {
         exists: !!apiKey,
-        length: apiKey ? apiKey.length : 0,
-        startsWithExpectedPrefix: apiKey ? apiKey.startsWith('AIza') : false
+        length: apiKey ? apiKey.length : 0
       });
       
-      if (!apiKey) {
-        console.error('❌ Missing Gemini API key');
-        res.status(500).json({ 
-          error: 'Missing Gemini API key. Please set GEMINI_API_KEY in your environment variables',
-          help: 'Get a free API key at: https://makersuite.google.com/app/apikey',
-          debug: {
-            envVarsAvailable: Object.keys(process.env).filter(key => key.includes('GEMINI') || key.includes('API')),
-            timestamp: new Date().toISOString()
-          }
-        });
-        return;
-      }
-
-      if (!apiKey.startsWith('AIza')) {
-        console.error('❌ Invalid Gemini API key format');
-        res.status(500).json({ 
-          error: 'Invalid Gemini API key format. Key should start with "AIza"',
-          help: 'Check your API key at: https://makersuite.google.com/app/apikey'
-        });
-        return;
-      }
-
-      console.log('🚀 Making test API call to Gemini...');
-      const testPrompt = 'Respond with valid JSON: {"status": "working", "message": "API is functional"}';
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-      
-      try {
-        const response = await axios.post(geminiUrl, {
-          contents: [{ parts: [{ text: testPrompt }] }]
-        }, {
-          headers: { 'Content-Type': 'application/json' },
-          timeout: 10000
-        });
-        
-        console.log('✅ Gemini API test successful:', response.status);
-        const data = response.data;
-        const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        
-        res.json({
-          success: true,
-          apiConfigured: true,
-          testResponse: generatedText,
-          timestamp: new Date().toISOString()
-        });
-        return;
-      } catch (apiError) {
-        console.error('❌ Gemini API test failed:', {
-          status: apiError.response?.status,
-          statusText: apiError.response?.statusText,
-          data: apiError.response?.data,
-          message: apiError.message
-        });
-        
-        res.status(500).json({
-          error: 'Gemini API test failed',
-          details: apiError.response?.data || apiError.message,
-          status: apiError.response?.status
-        });
-        return;
-      }
+      return res.status(200).json({
+        success: true,
+        message: 'Minimal API function is working!',
+        timestamp: new Date().toISOString(),
+        environment: {
+          hasGeminiKey: !!apiKey,
+          nodeEnv: process.env.NODE_ENV,
+          vercelEnv: process.env.VERCEL_ENV
+        }
+      });
     }
     
-    // Handle /api/generate endpoint
+    // Handle /api/generate endpoint - MINIMAL VERSION  
     if (pathname === '/api/generate' && req.method === 'POST') {
       console.log('🎯 Generate endpoint called');
       
-      let notes = '';
-      
-      // Only allow JSON input (text or Supabase URL)
-      if (req.headers['content-type']?.includes('application/json')) {
-        console.log('📥 Processing JSON request');
-        
-        let body = '';
-        req.on('data', chunk => { body += chunk; });
-        await new Promise(resolve => req.on('end', resolve));
-        
-        console.log('📦 Request body length:', body.length);
-        
-        try {
-          const data = JSON.parse(body);
-          console.log('✅ JSON parsed successfully. Keys:', Object.keys(data));
-          
-          if (data.fileURL) {
-            console.log('📂 Processing file URL:', data.fileURL.substring(0, 100) + '...');
-            
-            const response = await fetch(data.fileURL);
-            if (!response.ok) {
-              throw new Error(`Failed to download file: ${response.status}`);
-            }
-            
-            const arrayBuffer = await response.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-            const contentType = response.headers.get('content-type') || 'application/octet-stream';
-            
-            console.log('📄 File downloaded:', {
-              contentType,
-              size: buffer.length
-            });
-            
-            notes = await extractTextFromBuffer(buffer, contentType);
-            console.log('📝 Text extracted:', notes.length, 'characters');
-            
-          } else if (data.notes) {
-            notes = data.notes;
-            console.log('📝 Text input received:', notes.length, 'characters');
-            
-          } else {
-            console.error('❌ No content provided in request');
-            res.status(400).json({ error: 'No content provided. Please provide fileURL or notes in the request body.' });
-            return;
-          }
-        } catch (parseError) {
-          console.error('❌ JSON parsing or file processing error:', parseError.message);
-          if (parseError.message && parseError.message.includes('Failed to download file')) {
-            res.status(400).json({ error: 'Failed to process the uploaded file. Please try again.' });
-            return;
-          }
-          res.status(400).json({ error: 'Invalid JSON or file processing error: ' + parseError.message });
-          return;
-        }
-      } else if (req.headers['content-type']?.includes('multipart/form-data')) {
-        console.error('❌ Multipart form data blocked');
-        res.status(400).json({ error: 'Direct file uploads are not supported. Please upload your file to Supabase or another storage provider and provide the file URL.' });
-        return;
-      } else {
-        console.error('❌ Unsupported content type:', req.headers['content-type']);
-        res.status(400).json({ error: 'Unsupported content type. Only application/json is accepted.' });
-        return;
-      }
-
-      if (!notes || notes.trim().length === 0) {
-        console.error('❌ No content found after processing');
-        res.status(400).json({ error: 'No content found in the provided input' });
-        return;
-      }
-
-      if (notes.trim().length < 50) {
-        console.error('❌ Content too short:', notes.trim().length);
-        res.status(400).json({ error: 'Content is too short. Please provide more detailed study material for better results.' });
-        return;
-      }
-      
-      console.log('✅ Content validation passed');
-      
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
-        console.error('❌ No Gemini API key for generate endpoint');
-        res.status(500).json({ error: 'Missing Gemini API key. Get one free at https://makersuite.google.com/app/apikey' });
-        return;
+        console.error('❌ Missing Gemini API key');
+        return res.status(500).json({ 
+          error: 'Missing Gemini API key. Please set GEMINI_API_KEY in your environment variables',
+          help: 'Get a free API key at: https://makersuite.google.com/app/apikey'
+        });
       }
       
-      console.log('🔄 Creating prompt and calling Gemini API...');
-      const prompt = createDynamicPrompt(notes);
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      // Simple test without complex file processing
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      await new Promise(resolve => req.on('end', resolve));
       
+      let data;
       try {
-        const response = await axios.post(geminiUrl, {
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { 
-            temperature: 0.7, 
-            maxOutputTokens: 4000,
-            topP: 0.9,
-            topK: 40
-          }
-        }, {
-          headers: { 'Content-Type': 'application/json' },
-          timeout: 30000
-        });
-        
-        console.log('✅ Gemini API response received:', response.status);
-        
-        const data = response.data;
-        const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        
-        if (!generatedText) {
-          console.error('❌ No text generated by Gemini');
-          res.status(500).json({ error: 'No response from Gemini AI. Please try again.' });
-          return;
-        }
-        
-        console.log('🔄 Processing Gemini response...');
-        
-        // Clean and parse the JSON response
-        let cleanText = generatedText.trim();
-        if (cleanText.startsWith('```json')) {
-          cleanText = cleanText.replace(/```json\n?/, '').replace(/\n?```$/, '');
-        } else if (cleanText.startsWith('```')) {
-          cleanText = cleanText.replace(/```\n?/, '').replace(/\n?```$/, '');
-        }
-        
-        let result;
-        try {
-          result = JSON.parse(cleanText);
-          console.log('✅ Response JSON parsed successfully');
-        } catch (parseError) {
-          console.error('❌ JSON parse error:', parseError.message);
-          console.error('Raw text (first 500 chars):', cleanText.substring(0, 500));
-          res.status(500).json({ error: 'AI response could not be processed. Please try again with different content.' });
-          return;
-        }
-        
-        // Validate the result structure
-        if (!result.summary || !result.flashcards || !result.quiz) {
-          console.error('❌ Invalid result structure:', {
-            hasSummary: !!result.summary,
-            hasFlashcards: !!result.flashcards,
-            hasQuiz: !!result.quiz
-          });
-          res.status(500).json({ error: 'Incomplete study pack generated. Please try again.' });
-          return;
-        }
-
-        if (!Array.isArray(result.flashcards) || result.flashcards.length === 0) {
-          console.error('❌ No valid flashcards generated');
-          res.status(500).json({ error: 'No flashcards could be generated. Please provide more detailed content.' });
-          return;
-        }
-
-        if (!Array.isArray(result.quiz) || result.quiz.length === 0) {
-          console.error('❌ No valid quiz questions generated');
-          res.status(500).json({ error: 'No quiz questions could be generated. Please provide more detailed content.' });
-          return;
-        }
-        
-        console.log('🎉 Study pack generated successfully');
-        res.json(result);
-        return;
-        
-      } catch (apiError) {
-        console.error('❌ Gemini API error:', {
-          status: apiError.response?.status,
-          statusText: apiError.response?.statusText,
-          data: apiError.response?.data,
-          message: apiError.message
-        });
-        
-        if (apiError.response) {
-          if (apiError.response.status === 429) {
-            res.status(429).json({ error: 'AI service is temporarily busy. Please try again in a moment.' });
-          } else if (apiError.response.status === 403) {
-            res.status(500).json({ error: 'AI service configuration error. Please contact support.' });
-          } else {
-            res.status(500).json({ error: `AI service error: ${apiError.response.status}` });
-          }
-        } else if (apiError.code === 'ECONNABORTED' || apiError.message.includes('timeout')) {
-          res.status(504).json({ error: 'Request timed out. Please try again with shorter content.' });
-        } else {
-          res.status(500).json({ error: 'AI service error. Please try again.' });
-        }
-        return;
+        data = JSON.parse(body);
+      } catch (parseError) {
+        return res.status(400).json({ error: 'Invalid JSON in request body' });
       }
+      
+      if (!data.notes && !data.fileURL) {
+        return res.status(400).json({ error: 'Please provide either notes or fileURL' });
+      }
+      
+      // For now, just return a simple response without calling Gemini
+      return res.status(200).json({
+        success: true,
+        message: 'Minimal generate endpoint is working!',
+        received: {
+          hasNotes: !!data.notes,
+          hasFileURL: !!data.fileURL,
+          notesLength: data.notes ? data.notes.length : 0
+        },
+        timestamp: new Date().toISOString()
+      });
     }
     
     // Handle 404 for other routes
     console.log('❌ 404 - Endpoint not found:', pathname);
-    res.status(404).json({ error: 'API endpoint not found' });
+    return res.status(404).json({ error: 'API endpoint not found' });
     
   } catch (error) {
     console.error('💥 FATAL ERROR in API handler:', {
       name: error.name,
       message: error.message,
-      stack: error.stack?.substring(0, 1000),
-      timestamp: new Date().toISOString()
+      stack: error.stack?.substring(0, 500)
     });
     
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Internal server error. Please try again.',
       timestamp: new Date().toISOString()
     });
