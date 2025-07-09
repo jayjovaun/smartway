@@ -1,6 +1,6 @@
 /**
- * SmartWay AI Study Companion - Working Production Server
- * Fixed path-to-regexp issue by avoiding problematic route patterns
+ * SmartWay AI Study Companion - Production Server
+ * Enhanced for Vercel serverless deployment with error handling
  */
 
 const express = require('express');
@@ -9,22 +9,54 @@ const dotenv = require('dotenv');
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
-const pdfParse = require('pdf-parse');
-const mammoth = require('mammoth');
 
+// Load environment variables first
 dotenv.config();
 
+// Initialize app early for error handling
 const app = express();
 const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const IS_PRODUCTION = NODE_ENV === 'production';
 
-// Logging
+// Enhanced logging
 const logger = {
   info: (message, data = {}) => console.log(`[INFO] ${message}`, data),
   error: (message, error = {}) => console.error(`[ERROR] ${message}`, error),
   debug: (message, data = {}) => {
     if (!IS_PRODUCTION) console.log(`[DEBUG] ${message}`, data);
+  }
+};
+
+// Check critical environment variables
+const checkEnvironment = () => {
+  const requiredEnvVars = ['GEMINI_API_KEY'];
+  const missing = requiredEnvVars.filter(env => !process.env[env]);
+  
+  if (missing.length > 0) {
+    logger.error('Missing critical environment variables:', { missing });
+    throw new Error(`Missing environment variables: ${missing.join(', ')}`);
+  }
+  
+  logger.info('Environment variables validated successfully');
+};
+
+// Dynamic package loading with fallbacks
+let pdfParse, mammoth;
+let documentsSupported = true;
+
+const loadDocumentProcessingPackages = async () => {
+  try {
+    pdfParse = require('pdf-parse');
+    mammoth = require('mammoth');
+    logger.info('Document processing packages loaded successfully');
+    documentsSupported = true;
+  } catch (error) {
+    logger.error('Document processing packages not available in this environment:', error.message);
+    documentsSupported = false;
+    // Create fallback functions
+    pdfParse = null;
+    mammoth = null;
   }
 };
 
@@ -34,10 +66,24 @@ logger.info('🚀 Starting SmartWay AI Study Companion Server', {
   apiKeyPresent: !!process.env.GEMINI_API_KEY
 });
 
+// Check environment and load packages
+try {
+  checkEnvironment();
+  loadDocumentProcessingPackages();
+} catch (error) {
+  logger.error('Startup failed:', error.message);
+  if (IS_PRODUCTION) {
+    // In production, continue with limited functionality
+    documentsSupported = false;
+  } else {
+    process.exit(1);
+  }
+}
+
 // Middleware
 app.use(cors({
   origin: IS_PRODUCTION ? 
-    ['https://smartway-ai.vercel.app'] : 
+    ['https://smartway-mvp-version.vercel.app', 'https://smartway-ai.vercel.app'] : 
     ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true
 }));
@@ -52,6 +98,16 @@ if (fs.existsSync(buildPath)) {
     maxAge: IS_PRODUCTION ? '1d' : '0'
   }));
 }
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    environment: NODE_ENV,
+    documentsSupported,
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Validation functions
 const validateInput = {
@@ -106,7 +162,7 @@ const optimizeContentForProcessing = (content) => {
 const processWithGemini = async (content) => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error('Gemini API key not configured');
+    throw new Error('Gemini API key not configured. Please check environment variables.');
   }
 
   // Optimize content for processing
@@ -183,7 +239,7 @@ REQUIREMENTS:
         'Content-Type': 'application/json',
         'User-Agent': 'SmartWay/1.0'
       },
-      timeout: 120000 // Increased to 2 minutes for larger content
+      timeout: 120000 // 2 minutes for serverless environment
     });
     
     const generatedText = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -199,353 +255,269 @@ REQUIREMENTS:
     } else if (cleanText.startsWith('```')) {
       cleanText = cleanText.replace(/```\n?/, '').replace(/\n?```$/, '');
     }
-    
-    const parsed = JSON.parse(cleanText);
-    
-    // Validate structure
-    if (!parsed.summary?.overview || !parsed.flashcards || !parsed.quiz) {
-      throw new Error('Invalid response structure');
+
+    try {
+      const parsed = JSON.parse(cleanText);
+      
+      // Validate structure
+      if (!parsed.summary || !parsed.flashcards || !parsed.quiz) {
+        throw new Error('Invalid response structure from AI service');
+      }
+
+      return parsed;
+    } catch (parseError) {
+      logger.error('Failed to parse AI response:', parseError);
+      throw new Error('AI service returned invalid JSON response');
     }
-    
-    if (!Array.isArray(parsed.flashcards) || parsed.flashcards.length === 0) {
-      throw new Error('No flashcards generated');
-    }
-    
-    if (!Array.isArray(parsed.quiz) || parsed.quiz.length === 0) {
-      throw new Error('No quiz questions generated');
-    }
-    
-    logger.info('AI response processed successfully', {
-      flashcardCount: parsed.flashcards.length,
-      quizCount: parsed.quiz.length
-    });
-    
-    return parsed;
     
   } catch (error) {
-    if (error.response) {
-      logger.error('Gemini API error', {
+    if (error.response?.status === 503) {
+      logger.error('Gemini API error', { 
         status: error.response.status,
-        data: error.response.data
+        data: error.response.data 
       });
-      
-      if (error.response.status === 429) {
-        throw new Error('AI service is temporarily busy. Please try again in a moment.');
-      } else if (error.response.status === 403) {
-        throw new Error('API key is invalid or has insufficient permissions.');
-      } else {
-        throw new Error('AI service error. Please try again.');
-      }
+      throw new Error('AI service is temporarily unavailable. Please try again in a few moments.');
     } else if (error.code === 'ECONNABORTED') {
-      throw new Error('Processing timed out due to large content size. The content is being processed - please wait and try again if needed.');
+      throw new Error('Request timed out. Please try again with shorter content.');
     } else {
-      throw error;
+      logger.error('Unexpected error calling Gemini API:', error);
+      throw new Error('AI service error. Please try again.');
     }
   }
 };
 
-// Extract text from buffer based on file type
+// Enhanced text extraction with fallbacks
 const extractTextFromBuffer = async (buffer, contentType, fileUrl = '') => {
-  try {
-    // Determine file type from URL extension or content-type
-    const isTextFile = contentType.includes('text/plain') || fileUrl.endsWith('.txt');
-    const isPdf = contentType.includes('application/pdf') || fileUrl.endsWith('.pdf');
-    const isWord = contentType.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document') || 
-                   contentType.includes('application/msword') || 
-                   fileUrl.endsWith('.docx') || fileUrl.endsWith('.doc');
+  if (!documentsSupported) {
+    throw new Error('Document processing is not available in this environment. Please use text input instead.');
+  }
 
-    if (isTextFile) {
-      const text = buffer.toString('utf-8');
-      if (!text.trim()) {
-        throw new Error('Text file is empty.');
-      }
-      return text;
-    } 
-    
-    if (isPdf) {
-      logger.debug('Processing PDF document...');
-      const pdfData = await pdfParse(buffer);
-      if (!pdfData.text || pdfData.text.trim().length === 0) {
-        throw new Error('No text content could be extracted from the PDF. The document may be image-based, encrypted, or corrupted.');
-      }
-      logger.debug('PDF text extracted successfully', { textLength: pdfData.text.length });
-      return pdfData.text;
-    }
-    
-    if (isWord) {
-      logger.debug('Processing Word document...');
-      let result;
-      
-      if (contentType.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document') || fileUrl.endsWith('.docx')) {
-        // Modern .docx format
-        result = await mammoth.extractRawText({ buffer });
-      } else {
-        // Older .doc format - mammoth can sometimes handle these too
-        try {
-          result = await mammoth.extractRawText({ buffer });
-        } catch (docError) {
-          throw new Error('Cannot process older .doc files. Please convert to .docx format or save as PDF.');
+  const getFileType = (contentType, url) => {
+    if (contentType?.includes('pdf') || url.toLowerCase().includes('.pdf')) return 'pdf';
+    if (contentType?.includes('word') || contentType?.includes('document') || 
+        url.toLowerCase().match(/\.(docx?|rtf)$/)) return 'word';
+    if (contentType?.includes('text') || url.toLowerCase().includes('.txt')) return 'text';
+    return 'unknown';
+  };
+
+  const fileType = getFileType(contentType, fileUrl);
+  
+  try {
+    switch (fileType) {
+      case 'pdf':
+        if (!pdfParse) {
+          throw new Error('PDF processing not available');
         }
-      }
-      
-      if (!result.value || result.value.trim().length === 0) {
-        throw new Error('No text content could be extracted from the Word document. The document may be empty or corrupted.');
-      }
-      
-      logger.debug('Word document text extracted successfully', { textLength: result.value.length });
-      return result.value;
+        logger.debug('Processing PDF document...', {});
+        const pdfData = await pdfParse(buffer);
+        const text = pdfData.text?.trim();
+        if (!text || text.length < 50) {
+          throw new Error('PDF appears to be empty, corrupted, or contains only images. Please ensure the PDF has extractable text content.');
+        }
+        logger.debug('PDF text extracted successfully', { textLength: text.length });
+        return text;
+
+      case 'word':
+        if (!mammoth) {
+          throw new Error('Word document processing not available');
+        }
+        logger.debug('Processing Word document...', {});
+        const result = await mammoth.extractRawText({ buffer });
+        const wordText = result.value?.trim();
+        if (!wordText || wordText.length < 50) {
+          throw new Error('Word document appears to be empty or corrupted. Please check the file and try again.');
+        }
+        logger.debug('Word text extracted successfully', { textLength: wordText.length });
+        return wordText;
+
+      case 'text':
+        logger.debug('Processing text file...', {});
+        const textContent = buffer.toString('utf-8').trim();
+        if (!textContent || textContent.length < 50) {
+          throw new Error('Text file appears to be empty. Please provide a file with content.');
+        }
+        logger.debug('Text file processed successfully', { textLength: textContent.length });
+        return textContent;
+
+      default:
+        throw new Error(`Unsupported file type: ${contentType || 'unknown'}. Please upload a PDF, Word document (.docx/.doc), or text file (.txt).`);
     }
-    
-    // Try to process as text anyway (for cases where content-type is wrong)
-    const text = buffer.toString('utf-8');
-    if (text.length > 50 && !text.includes('\u0000')) { // Check for binary content
-      logger.debug('Processing file as text despite unknown content-type');
-      return text;
-    }
-    
-    throw new Error('Unsupported file type. Please upload PDF (.pdf), Word (.docx, .doc), or text (.txt) files.');
-    
   } catch (error) {
-    // Re-throw specific errors
-    if (error.message.includes('No text content could be extracted') || 
-        error.message.includes('Cannot process older .doc files') ||
-        error.message.includes('Unsupported file type')) {
-      throw error;
+    if (error.message.includes('not available')) {
+      throw error; // Pass through availability errors
     }
     
-    // Handle parsing errors
-    if (error.message.includes('Invalid PDF') || error.message.includes('PDF')) {
-      throw new Error('Invalid or corrupted PDF file. Please check the file and try again.');
+    // Enhanced error messages based on common issues
+    if (error.message.includes('Invalid PDF') || error.message.includes('PDF syntax')) {
+      throw new Error('This PDF file appears to be corrupted or uses an unsupported format. Please try a different PDF file.');
+    }
+    if (error.message.includes('password') || error.message.includes('encrypted')) {
+      throw new Error('This document is password-protected or encrypted. Please provide an unlocked version.');
     }
     
-    if (error.message.includes('password')) {
-      throw new Error('Password-protected documents are not supported. Please remove the password and try again.');
-    }
-    
-    throw new Error('Failed to process the uploaded file. Please check the file format and try again.');
+    logger.error('Text extraction failed:', error);
+    throw new Error(`Failed to extract text from ${fileType} file: ${error.message}`);
   }
 };
 
-// File processing with full document support
+// File URL processing with enhanced error handling
 const processFileUrl = async (fileUrl) => {
   try {
     logger.debug('Downloading file from URL:', fileUrl);
     
     const response = await axios.get(fileUrl, {
-      timeout: 120000, // 2 minutes for large files
-      maxContentLength: 50 * 1024 * 1024, // 50MB limit
       responseType: 'arraybuffer',
+      timeout: 120000, // 2 minutes for large files
+      maxContentLength: 52428800, // 50MB
       headers: {
-        'User-Agent': 'SmartWay/1.0'
+        'User-Agent': 'SmartWay-FileProcessor/1.0'
       }
     });
-    
-    const contentType = response.headers['content-type'] || '';
+
     const buffer = Buffer.from(response.data);
+    const contentType = response.headers['content-type'] || '';
     
     logger.debug('Downloaded file successfully', {
       contentType,
       size: buffer.length,
-      url: fileUrl.substring(0, 100) + (fileUrl.length > 100 ? '...' : '')
+      url: fileUrl.substring(0, 100) + '...'
     });
-    
-    // Extract text using the dedicated function
+
     const extractedText = await extractTextFromBuffer(buffer, contentType, fileUrl);
-    
-    if (!extractedText || extractedText.trim().length < 20) {
-      throw new Error('Extracted content is too short. Please provide a document with more substantial text content.');
-    }
+    const wordCount = extractedText.split(/\s+/).length;
     
     logger.debug('Text extraction completed', { 
-      textLength: extractedText.length,
-      wordCount: extractedText.split(/\s+/).length 
+      textLength: extractedText.length, 
+      wordCount 
     });
     
     return extractedText;
     
   } catch (error) {
-    logger.error('File processing error:', {
-      message: error.message,
-      url: fileUrl.substring(0, 100) + (fileUrl.length > 100 ? '...' : ''),
-      code: error.code,
-      status: error.response?.status
-    });
-    
     if (error.code === 'ECONNABORTED') {
-      throw new Error('File download timed out. Please check your internet connection and try again.');
-    } else if (error.response?.status === 404) {
-      throw new Error('File not found. The uploaded file URL is invalid or expired. Please try uploading again.');
-    } else if (error.response?.status === 403) {
-      throw new Error('Access denied. The file URL is not accessible. Please check your upload settings and try again.');
-    } else if (error.message.includes('No text content could be extracted') ||
-               error.message.includes('Cannot process older .doc files') ||
-               error.message.includes('Unsupported file type') ||
-               error.message.includes('Password-protected') ||
-               error.message.includes('Extracted content is too short')) {
-      throw error; // Re-throw our custom messages
-    } else {
-      throw new Error('Unable to process the uploaded file. Please try uploading a PDF, Word document, or text file.');
+      throw new Error('File download timed out. The file may be too large or the connection is slow. Please try with a smaller file.');
     }
+    if (error.response?.status === 404) {
+      throw new Error('File not found. The file may have been deleted or the URL is incorrect.');
+    }
+    if (error.response?.status === 403) {
+      throw new Error('Access denied. The file may be private or require authentication.');
+    }
+    if (error.message.includes('maxContentLength')) {
+      throw new Error('File too large. Please upload files smaller than 50MB.');
+    }
+    
+    logger.error('File processing failed:', error);
+    throw new Error('Failed to download or process file. Please check the file URL and try again.');
   }
 };
 
-// API Routes
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    environment: NODE_ENV,
-    apiConfigured: !!process.env.GEMINI_API_KEY
-  });
-});
-
-app.get('/api/test', (req, res) => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  
-  if (!apiKey) {
-    return res.status(500).json({
-      success: false,
-      error: 'Missing Gemini API key. Get one free at https://makersuite.google.com/app/apikey'
-    });
-  }
-  
-  res.json({
-    success: true,
-    message: 'API is working correctly!',
-    timestamp: new Date().toISOString(),
-    environment: NODE_ENV
-  });
-});
-
-app.post('/api/generate', async (req, res) => {
-  const requestId = Math.random().toString(36).substr(2, 9);
-  
-  logger.info(`[${requestId}] New generation request`);
-  
-  res.setHeader('Content-Type', 'application/json');
-  res.setHeader('X-Request-ID', requestId);
+// Main generation endpoint with comprehensive error handling
+app.post('/api/generate1', async (req, res) => {
+  const requestId = Math.random().toString(36).substring(2, 15);
   
   try {
-    let content = '';
+    logger.info(`[${requestId}] New generation request`, {});
     
-    if (req.body.fileURL) {
-      const fileUrl = validateInput.fileUrl(req.body.fileURL);
-      logger.debug(`[${requestId}] Processing file URL`);
-      content = await processFileUrl(fileUrl);
-    } else if (req.body.notes) {
-      logger.debug(`[${requestId}] Processing text input`);
-      content = validateInput.text(req.body.notes);
+    const { text, fileUrl } = req.body;
+    let content;
+
+    if (text) {
+      logger.debug(`[${requestId}] Processing text input`, {});
+      content = validateInput.text(text);
+    } else if (fileUrl) {
+      if (!documentsSupported) {
+        return res.status(503).json({
+          error: 'File processing is not available in this environment. Please use text input instead.',
+          supportedMethods: ['text']
+        });
+      }
+      
+      logger.debug(`[${requestId}] Processing file URL`, {});
+      const validatedUrl = validateInput.fileUrl(fileUrl);
+      content = await processFileUrl(validatedUrl);
     } else {
       return res.status(400).json({
-        error: 'Missing input. Please provide either text notes or a file URL.'
+        error: 'Either text or fileUrl is required'
       });
     }
-    
-    if (!content || content.trim().length < 20) {
-      return res.status(400).json({
-        error: 'Content too short. Please provide more detailed study material.'
-      });
-    }
-    
-    logger.debug(`[${requestId}] Content validated`, {
-      length: content.length,
-      wordCount: content.split(/\s+/).length
+
+    // Validate content length
+    logger.debug(`[${requestId}] Content validated`, { 
+      length: content.length, 
+      wordCount: content.split(/\s+/).length 
     });
+
+    // Process with AI
+    const result = await processWithGemini(content);
     
-    const studyPack = await processWithGemini(content.trim());
-    
+    logger.info('AI response processed successfully', { 
+      flashcardCount: result.flashcards?.length || 0,
+      quizCount: result.quiz?.length || 0
+    });
+
     logger.info(`[${requestId}] Study pack generated successfully`, {
-      flashcards: studyPack.flashcards.length,
-      questions: studyPack.quiz.length
+      flashcards: result.flashcards?.length || 0,
+      questions: result.quiz?.length || 0
     });
-    
-    res.json(studyPack);
-    
+
+    res.json(result);
+
   } catch (error) {
-    logger.error(`[${requestId}] Generation failed`, {
-      error: error.message
-    });
+    logger.error(`[${requestId}] Generation failed`, { error: error.message });
     
-    if (!res.headersSent) {
-      const statusCode = error.message.includes('too short') || 
-                        error.message.includes('Invalid') ? 400 : 500;
-      
-      res.status(statusCode).json({
-        error: error.message || 'Failed to generate study pack. Please try again.'
-      });
+    // Return appropriate error codes
+    if (error.message.includes('not configured') || error.message.includes('environment variables')) {
+      res.status(500).json({ error: 'Server configuration error. Please contact support.' });
+    } else if (error.message.includes('temporarily unavailable')) {
+      res.status(503).json({ error: error.message });
+    } else if (error.message.includes('too large') || error.message.includes('too long')) {
+      res.status(413).json({ error: error.message });
+    } else if (error.message.includes('Invalid') || error.message.includes('required')) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: error.message });
     }
   }
 });
 
-// Error handling
-app.use((error, req, res, next) => {
-  logger.error('Unhandled error', {
-    error: error.message,
-    url: req.url,
-    method: req.method
-  });
-  
-  if (!res.headersSent) {
-    res.status(500).json({
-      error: 'Internal server error. Please try again.'
-    });
-  }
-});
-
-// 404 for API routes - using simple route without wildcards
-app.use('/api', (req, res) => {
-  res.status(404).json({
-    error: 'API endpoint not found'
-  });
-});
-
-// Frontend routes - specific routes instead of wildcards
-app.get('/', (req, res) => {
+// Catch-all route for frontend
+app.get('*', (req, res) => {
   const indexPath = path.join(buildPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    const devIndexPath = path.join(process.cwd(), 'index.html');
-    if (fs.existsSync(devIndexPath)) {
-      res.sendFile(devIndexPath);
-    } else {
-      res.status(404).send('Frontend not found. Please build the application first.');
-    }
+    res.status(404).json({ error: 'Application not found' });
   }
 });
 
-// Specific frontend routes for React Router
-const frontendRoutes = ['/flashcards', '/quiz', '/summary', '/about'];
-frontendRoutes.forEach(route => {
-  app.get(route, (req, res) => {
-    const indexPath = path.join(buildPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      res.status(404).send('Frontend not found.');
-    }
+// Global error handler
+app.use((error, req, res, next) => {
+  logger.error('Unhandled error:', error);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: IS_PRODUCTION ? 'Please try again later' : error.message
   });
 });
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   logger.info('🚀 SmartWay Server started successfully', {
     port: PORT,
     environment: NODE_ENV,
     frontendPath: buildPath,
-    apiHealth: `http://localhost:${PORT}/api/health`
+    apiHealth: `http://localhost:${PORT}/api/health`,
+    documentsSupported
   });
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  logger.info('SIGTERM received. Shutting down gracefully...');
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  logger.info('SIGINT received. Shutting down gracefully...');
-  process.exit(0);
+  logger.info('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    logger.info('Server closed');
+    process.exit(0);
+  });
 });
 
 module.exports = app; 
