@@ -6,6 +6,7 @@
       "use": "@vercel/node",
       "config": {
         "maxLambdaSize": "50mb",
+        "maxDuration": 120,
         "includeFiles": [
           "dist/**",
           "uploads/**"
@@ -30,11 +31,6 @@
       "dest": "/dist/$1"
     }
   ],
-  "functions": {
-    "server.js": {
-      "maxDuration": 120
-    }
-  },
   "env": {
     "NODE_ENV": "production"
   }
