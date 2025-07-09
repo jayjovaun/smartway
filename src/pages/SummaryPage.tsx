@@ -20,9 +20,22 @@ export const SummaryPage: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    const data = location.state?.summaryData;
+    // Try different possible data structures
+    const data = location.state?.summaryData || location.state?.summary;
+    console.log('Summary page received:', location.state);
     if (data) {
-      setSummaryData(data);
+      // Convert API format to component format
+      const convertedData: SummaryData = {
+        overview: data.overview || 'No overview available',
+        keyPoints: data.keyPoints || [],
+        definitions: data.definitions ? 
+          (Array.isArray(data.definitions) ? 
+            data.definitions : 
+            Object.entries(data.definitions).map(([term, definition]) => ({ term, definition: definition as string }))
+          ) : [],
+        importantConcepts: data.importantConcepts || data.keyPoints?.slice(0, 5) || []
+      };
+      setSummaryData(convertedData);
     } else {
       // Redirect to app if no data
       navigate('/app');
@@ -226,28 +239,32 @@ export const SummaryPage: React.FC = () => {
                   <h2 className="h3 fw-bold text-bright mb-0">Important Concepts</h2>
                 </div>
                 <div className="d-flex flex-wrap gap-3">
-                  {summaryData.importantConcepts.map((concept, index) => (
-                    <motion.button
-                      key={index}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.5 + index * 0.1 }}
-                      onClick={() => handleConceptClick(concept)}
-                      className="btn fs-6 px-4 py-2 border-0"
-                      style={{
-                        background: 'linear-gradient(135deg, #F59E0B, #EAB308)',
-                        color: 'white',
-                        borderRadius: '16px',
-                        fontWeight: '600',
-                        boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
-                        cursor: 'pointer'
-                      }}
-                      whileHover={{ scale: 1.05, y: -2, transition: { duration: 0.2 } }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      {concept}
-                    </motion.button>
-                  ))}
+                  {summaryData.importantConcepts && summaryData.importantConcepts.length > 0 ? (
+                    summaryData.importantConcepts.map((concept, index) => (
+                      <motion.button
+                        key={index}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.5 + index * 0.1 }}
+                        onClick={() => handleConceptClick(concept)}
+                        className="btn fs-6 px-4 py-2 border-0"
+                        style={{
+                          background: 'linear-gradient(135deg, #F59E0B, #EAB308)',
+                          color: 'white',
+                          borderRadius: '16px',
+                          fontWeight: '600',
+                          boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
+                          cursor: 'pointer'
+                        }}
+                        whileHover={{ scale: 1.05, y: -2, transition: { duration: 0.2 } }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        {concept}
+                      </motion.button>
+                    ))
+                  ) : (
+                    <div className="text-bright-muted">No important concepts available</div>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -283,31 +300,35 @@ export const SummaryPage: React.FC = () => {
                   <h2 className="h3 fw-bold text-bright mb-0">Key Definitions</h2>
                 </div>
                 <div className="row g-4">
-                  {summaryData.definitions.map((def, index) => (
-                    <div key={index} className="col-md-6 col-lg-4">
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.7 + index * 0.1 }}
-                        className="p-4 rounded-3"
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1))',
-                          border: '2px solid rgba(16, 185, 129, 0.3)',
-                          borderRadius: '16px',
-                          backdropFilter: 'blur(10px)',
-                          boxShadow: '0 4px 16px rgba(16, 185, 129, 0.2)'
-                        }}
-                        whileHover={{ scale: 1.02, y: -2, transition: { duration: 0.2 } }}
-                      >
-                        <h5 className="text-bright fw-bold mb-3 fs-5" style={{ color: '#10B981' }}>
-                          {def.term}
-                        </h5>
-                        <p className="text-bright mb-0 small lh-base">
-                          {def.definition}
-                        </p>
-                      </motion.div>
-                    </div>
-                  ))}
+                  {summaryData.definitions && summaryData.definitions.length > 0 ? (
+                    summaryData.definitions.map((def, index) => (
+                      <div key={index} className="col-md-6 col-lg-4">
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.7 + index * 0.1 }}
+                          className="p-4 rounded-3"
+                          style={{
+                            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1))',
+                            border: '2px solid rgba(16, 185, 129, 0.3)',
+                            borderRadius: '16px',
+                            backdropFilter: 'blur(10px)',
+                            boxShadow: '0 4px 16px rgba(16, 185, 129, 0.2)'
+                          }}
+                          whileHover={{ scale: 1.02, y: -2, transition: { duration: 0.2 } }}
+                        >
+                          <h5 className="text-bright fw-bold mb-3 fs-5" style={{ color: '#10B981' }}>
+                            {def.term}
+                          </h5>
+                          <p className="text-bright mb-0 small lh-base">
+                            {def.definition}
+                          </p>
+                        </motion.div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-bright-muted">No definitions available</div>
+                  )}
                 </div>
               </div>
             </motion.div>

@@ -29,8 +29,15 @@ export const QuizPage: React.FC = () => {
     console.log('Quiz data type:', Array.isArray(data) ? 'array' : typeof data);
     
     if (data && Array.isArray(data)) {
-      setQuizQuestions(data);
-      console.log('Quiz questions set:', data.length);
+      // Convert API format to component format
+      const convertedQuiz = data.map((q: any) => ({
+        question: q.question || 'No question available',
+        options: q.options || [],
+        answer: q.options && typeof q.correct === 'number' ? q.options[q.correct] : q.answer || '',
+        explanation: q.explanation || 'No explanation available'
+      }));
+      setQuizQuestions(convertedQuiz);
+      console.log('Quiz questions set:', convertedQuiz.length);
     } else {
       console.log('Invalid quiz data, navigating to /app');
       navigate('/app');

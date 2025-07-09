@@ -18,8 +18,14 @@ export const FlashcardsPage: React.FC = () => {
 
   useEffect(() => {
     const data = location.state?.flashcards;
+    console.log('Flashcards page received:', location.state);
     if (data && Array.isArray(data)) {
-      setFlashcards(data);
+      // Convert API format {front, back} to component format {question, answer}
+      const convertedFlashcards = data.map((card: any) => ({
+        question: card.front || card.question || 'No question available',
+        answer: card.back || card.answer || 'No answer available'
+      }));
+      setFlashcards(convertedFlashcards);
     } else {
       navigate('/app');
     }

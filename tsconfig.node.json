@@ -9,5 +9,5 @@
     "esModuleInterop": true,
     "outDir": "dist"
   },
-  "include": ["server.ts"]
+  "include": ["vite.config.ts"]
 }

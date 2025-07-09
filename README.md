@@ -1,221 +1,229 @@
-# React + TypeScript + Vite
+# SmartWay AI Study Companion
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+🚀 **Transform your documents into comprehensive study materials instantly!**
 
-Currently, two official plugins are available:
+An intelligent study companion powered by Google's Gemini AI that automatically generates summaries, flashcards, and quizzes from your uploaded documents or text notes.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Features
 
-## Expanding the ESLint configuration
+### 📄 **Multi-Format Document Support**
+- **PDF Documents** (.pdf) - Full text extraction with advanced parsing
+- **Word Documents** (.docx, .doc) - Complete text extraction from modern and legacy formats
+- **Text Files** (.txt) - Direct text processing
+- **Large File Support** - Handle documents up to **50MB**
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 🧠 **AI-Powered Study Materials**
+- **Smart Summaries** - Key points, definitions, and concept overviews
+- **Interactive Flashcards** - Dynamic question-answer cards with flip animations
+- **Adaptive Quizzes** - Multiple-choice questions with explanations
+- **Content Optimization** - Intelligent processing for very large documents
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 🔒 **Secure File Handling**
+- **Supabase Integration** - Secure cloud storage for document uploads
+- **Privacy-First** - Files processed securely with automatic cleanup
+- **Real-time Processing** - Instant feedback and progress tracking
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+### 🎯 **Enhanced User Experience**
+- **Drag & Drop Upload** - Intuitive file upload interface
+- **Progress Tracking** - Real-time upload and processing status
+- **Error Handling** - Clear, actionable error messages
+- **Responsive Design** - Works perfectly on all devices
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🚀 Quick Start
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Prerequisites
+- Node.js 18+ 
+- Supabase account and project
+- Google Gemini API key
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Installation
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-## Backend Usage
-
-### Development
-
-1. Create a `.env` file in the `smartway/` folder with:
-   ```
-   OPENAI_API_KEY=sk-...your real key here...
-   ```
-2. Start the backend server in dev mode:
-   ```sh
-   npm run start:dev
-   ```
-   This runs the backend directly from TypeScript using ts-node.
-
-### Production
-
-1. Build the backend:
-   ```sh
-   npm run build:server
-   ```
-2. Start the compiled backend:
-   ```sh
-   npm run start:prod
-   ```
-   This runs the compiled CommonJS backend from `dist/server.js`.
-
----
-
-# SmartWay - AI Study Companion
-
-Transform your notes into comprehensive study materials instantly with AI-powered summaries, flashcards, and quizzes.
-
-## 🚀 Quick Setup
-
-### 1. Install Dependencies
-```bash
-npm install
-```
-
-### 2. Configure API Key (REQUIRED)
-
-**You need a free Google Gemini API key for the app to work:**
-
-1. **Get a FREE API key**: Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. **Create `.env` file** in the project root:
+1. **Clone the repository**
    ```bash
-   # Windows PowerShell
-   New-Item .env -ItemType File
+   git clone https://github.com/jayjovaun/smartway.git
+   cd smartway
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Environment Setup**
+   Create a `.env` file in the root directory:
+   ```env
+   GEMINI_API_KEY=your_gemini_api_key_here
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+4. **Start the application**
+   ```bash
+   # Development mode (frontend + backend)
+   npm run dev:full
    
-   # Or manually create a file named .env
+   # Or separately:
+   npm run dev:server  # Backend only
+   npm run dev         # Frontend only
    ```
 
-3. **Add your API key** to the `.env` file:
-   ```
-   GEMINI_API_KEY=your_actual_api_key_here
-   PORT=3001
-   ```
+5. **Access the application**
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:3001
 
-   ⚠️ **Important**: Replace `your_actual_api_key_here` with your actual API key from Google AI Studio.
+## 📚 Usage
 
-### 3. Start the Application
+### Document Upload
+1. **Choose Input Method**: Select "Upload Document" tab
+2. **Upload File**: Drag & drop or browse for your document
+3. **Supported Formats**: PDF, Word (.docx, .doc), Text (.txt)
+4. **File Size**: Up to 50MB supported
+5. **Processing**: Automatic text extraction and AI analysis
+
+### Text Input
+1. **Choose Input Method**: Select "Type Text" tab
+2. **Paste Content**: Add your study material (minimum 20 characters)
+3. **Large Content**: Supports up to 200,000 characters
+4. **Processing**: Direct AI analysis of your text
+
+### Study Materials
+- **Summary**: Overview, key points, definitions, important concepts
+- **Flashcards**: Interactive cards with question/answer format
+- **Quiz**: Multiple-choice questions with immediate feedback
+
+## 🛠 Technical Features
+
+### Document Processing
+- **PDF Parsing**: Advanced text extraction using `pdf-parse`
+- **Word Processing**: Modern .docx and legacy .doc support via `mammoth`
+- **Error Handling**: Graceful handling of corrupted, encrypted, or image-based documents
+- **Content Validation**: Automatic quality checks and optimization
+
+### AI Processing
+- **Google Gemini**: Latest Gemini-1.5-flash model for high-quality generation
+- **Smart Chunking**: Automatic content optimization for large documents
+- **Timeout Handling**: 2-minute processing window for complex content
+- **Response Validation**: Comprehensive output verification
+
+### Performance
+- **Large Files**: 50MB document support with optimized processing
+- **Concurrent Handling**: Multiple simultaneous requests supported
+- **Memory Management**: Efficient buffer handling for large documents
+- **Error Recovery**: Robust retry mechanisms and fallback options
+
+## 🔧 API Endpoints
+
+### Health Check
 ```bash
-# Start backend server
-npm run start:dev
-
-# In another terminal, start frontend
-npm run dev
+GET /api/health
 ```
 
-## 🔧 Troubleshooting
+### Generate Study Pack
+```bash
+POST /api/generate
+Content-Type: application/json
 
-### "Server encountered an error" when uploading PDF:
-- ✅ **Check API Key**: Make sure you have a valid `GEMINI_API_KEY` in your `.env` file
-- ✅ **Restart Server**: After adding the API key, restart the server with `npm run start:dev`
-- ✅ **Test API**: Visit `http://localhost:3001/api/test` to verify your API key is working
+# Text input
+{
+  "notes": "Your study material text here..."
+}
 
-### PDF Upload Issues:
-- ✅ **File Format**: Only PDF, Word (.docx, .doc), and text files are supported
-- ✅ **File Size**: Maximum 10MB file size
-- ✅ **Text Content**: Make sure your PDF contains selectable text (not just images)
-
-## 📋 Features
-
-- **Smart Summary**: AI-generated overview with key points and definitions
-- **Interactive Flashcards**: Flip-style cards for active learning
-- **Adaptive Quiz**: Multiple-choice questions with explanations
-- **Document Upload**: Support for PDF, Word, and text files
-- **Mobile Responsive**: Works on all devices
-
-## 🛠️ Tech Stack
-
-- **Frontend**: React 19, TypeScript, Vite, Bootstrap, Framer Motion
-- **Backend**: Express.js, Node.js, TypeScript
-- **AI**: Google Gemini API (Free tier available)
-- **File Processing**: PDF-parse, Mammoth (for Word docs)
+# File URL input (from Supabase)
+{
+  "fileURL": "https://your-supabase-storage-url/filename.pdf"
+}
+```
 
 ## 📁 Project Structure
 
 ```
 smartway/
 ├── src/
-│   ├── components/     # React components
-│   ├── pages/         # Page components
-│   ├── api/           # API utilities
-│   └── styles/        # CSS and styling
-├── server.ts          # Backend server
-├── .env               # Environment variables (create this!)
-└── package.json       # Dependencies
+│   ├── components/          # React components
+│   │   ├── FileDropUpload.tsx   # File upload interface
+│   │   ├── InputForm.tsx        # Main input form
+│   │   └── ...
+│   ├── pages/              # Application pages
+│   │   ├── AppPage.tsx         # Main application
+│   │   ├── SummaryPage.tsx     # Study summary
+│   │   ├── FlashcardsPage.tsx  # Interactive flashcards
+│   │   └── QuizPage.tsx        # Quiz interface
+│   ├── utils/              # Utility functions
+│   │   ├── uploadFile.ts       # Supabase file upload
+│   │   └── prompts.ts          # AI prompt templates
+│   └── lib/
+│       └── supabase.ts         # Supabase configuration
+├── server.js               # Express server with document processing
+├── package.json           # Dependencies and scripts
+└── .env.example           # Environment template
 ```
 
-## 🔑 Environment Variables
+## 🌐 Deployment
 
-Create a `.env` file with these variables:
+### Vercel Deployment
+```bash
+npm run build
+npm run deploy:vercel
+```
 
+### Environment Variables for Production
 ```env
-# Required: Get from https://makersuite.google.com/app/apikey
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# Optional: Server port (default: 3001)
-PORT=3001
+NODE_ENV=production
+GEMINI_API_KEY=your_production_gemini_key
+VITE_SUPABASE_URL=your_production_supabase_url
+VITE_SUPABASE_ANON_KEY=your_production_supabase_key
 ```
 
-## 🚨 Common Issues
+## 📄 Supported File Types
 
-1. **"Missing Gemini API key"**: Add `GEMINI_API_KEY` to your `.env` file
-2. **"No text content extracted"**: Your PDF might be image-based or encrypted
-3. **"Request timed out"**: Content might be too long, try shorter documents
-4. **"Invalid file type"**: Only PDF, DOCX, DOC, and TXT files are supported
+| Format | Extension | Support Level | Max Size |
+|--------|-----------|---------------|----------|
+| PDF | `.pdf` | ✅ Full support | 50MB |
+| Word (Modern) | `.docx` | ✅ Full support | 50MB |
+| Word (Legacy) | `.doc` | ⚠️ Limited support | 50MB |
+| Text | `.txt` | ✅ Full support | 50MB |
 
-## 📞 Support
+## 🔍 Troubleshooting
 
-If you're still having issues:
-1. Check that your `.env` file exists and contains a valid API key
-2. Restart the server after adding the API key
-3. Test your API key at `http://localhost:3001/api/test`
-4. Make sure your PDF contains selectable text
+### Common Issues
+
+**Document Processing Errors:**
+- Ensure document is not password-protected
+- Check file is not corrupted or image-based
+- Verify file size is under 50MB
+
+**Upload Failures:**
+- Check Supabase configuration
+- Verify network connectivity
+- Ensure file type is supported
+
+**AI Generation Issues:**
+- Verify Gemini API key is valid
+- Check content length (minimum 20 characters)
+- Ensure stable internet connection
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## 📜 License
+
+MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **Google Gemini AI** - Advanced natural language processing
+- **Supabase** - Secure file storage and database
+- **React** - Frontend framework
+- **Mammoth.js** - Word document processing
+- **pdf-parse** - PDF text extraction
 
 ---
 
-**Need an API key?** Get one free at [Google AI Studio](https://makersuite.google.com/app/apikey) - no credit card required!
+**Made with ❤️ by the SmartWay Team**
 
-## Important: File Uploads on Vercel
-
-**Direct file uploads to `/api/generate` are NOT supported on Vercel deployments.**
-
-- Vercel serverless functions have a strict 4.5MB request body size limit.
-- To process files, users must upload them to Supabase (or another storage provider) first.
-- After uploading, send the file URL to `/api/generate` as JSON.
-- Text input (notes) can still be sent as JSON directly.
-
-If you attempt to upload files directly to `/api/generate`, you will receive an error. This is a platform limitation.
+Transform your learning experience with AI-powered study materials!

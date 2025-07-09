@@ -1,55 +1,68 @@
 {
   "name": "smartway",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "AI-powered study companion that generates flashcards, quizzes, and summaries from your documents and notes",
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && npm run build:server",
-    "build:server": "tsc server.ts --outDir . --module commonjs --esModuleInterop --target ES2020",
+    "dev:server": "node server.js",
+    "dev:full": "concurrently \"npm run dev:server\" \"npm run dev\"",
+    "build": "vite build",
+    "build:server": "echo 'Server is already in JavaScript - no compilation needed'",
     "start": "node server.js",
+    "start:prod": "NODE_ENV=production node server.js",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "lint:fix": "eslint . --fix",
+    "preview": "vite preview",
+    "test:api": "curl http://localhost:3001/api/health",
+    "clean": "rm -rf dist node_modules/.cache",
+    "deploy:vercel": "npm run build && vercel --prod"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.3",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
-    "@types/multer": "^2.0.0",
-    "@types/node": "^20.0.0",
-    "@types/node-fetch": "^2.6.12",
-    "@types/pdf-parse": "^1.1.5",
-    "@types/react-router-dom": "^5.3.3",
     "axios": "^1.10.0",
     "bootstrap": "^5.3.7",
     "cors": "^2.8.5",
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
     "framer-motion": "^12.23.0",
-    "mammoth": "^1.9.1",
-    "multer": "^2.0.1",
-    "node-fetch": "^2.7.0",
-    "pdf-parse": "^1.1.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-icons": "^5.5.0",
-    "react-router-dom": "^7.6.3",
-    "typescript": "~5.8.3"
+    "react-router-dom": "^7.6.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.5.2",
+    "concurrently": "^8.2.2",
     "eslint": "^9.29.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.2.0",
     "sass": "^1.89.2",
-    "ts-node": "^10.9.2",
+    "typescript": "~5.8.3",
     "typescript-eslint": "^8.34.1",
     "vite": "^7.0.0"
+  },
+  "keywords": [
+    "ai",
+    "education",
+    "study",
+    "flashcards",
+    "quiz",
+    "gemini",
+    "react",
+    "typescript"
+  ],
+  "author": "SmartWay Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jayjovaun/smartway.git"
   }
 }

@@ -50,13 +50,13 @@ export const FileDropUpload: React.FC<FileDropUploadProps> = ({
 
     // Check file type
     if (!allowedTypes.includes(file.type)) {
-      onUploadError('Invalid file type. Please upload PDF, Word documents, or text files.');
+      onUploadError('Invalid file type. Please upload PDF (.pdf), Word (.docx, .doc), or text (.txt) files.');
       return;
     }
 
-    // Check file size (10MB limit)
-    if (file.size > 10 * 1024 * 1024) {
-      onUploadError('File size too large. Please upload a file smaller than 10MB.');
+    // Check file size (50MB limit to match server)
+    if (file.size > 50 * 1024 * 1024) {
+      onUploadError('File size too large. Please upload a file smaller than 50MB.');
       return;
     }
 
@@ -235,7 +235,7 @@ export const FileDropUpload: React.FC<FileDropUploadProps> = ({
                 Choose File
               </label>
               <div className="text-bright-muted small mt-3">
-                Supports: PDF, Word (.docx, .doc), Text files (max 10MB)
+                Supports: PDF, Word (.docx, .doc), Text files (max 50MB)
               </div>
             </>
           )}
