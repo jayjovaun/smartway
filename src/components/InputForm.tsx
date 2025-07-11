@@ -5,7 +5,7 @@ import { FileDropUpload } from './FileDropUpload';
 import { UploadResult } from '@utils/uploadFile';
 
 interface InputFormProps {
-  onSubmit: (data: { notes?: string; file?: File; fileURL?: string }) => void;
+  onSubmit: (data: { text?: string; file?: File; fileUrl?: string }) => void;
   isLoading: boolean;
 }
 
@@ -18,9 +18,9 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputMethod === 'text' && notes.trim()) {
-      onSubmit({ notes: notes.trim() });
+      onSubmit({ text: notes.trim() });
     } else if (inputMethod === 'file' && uploadResult) {
-      onSubmit({ fileURL: uploadResult.downloadURL });
+      onSubmit({ fileUrl: uploadResult.downloadURL });
     }
   };
 
@@ -58,7 +58,10 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => 
       <div className="d-flex gap-2 mb-4 justify-content-center">
         <button
           type="button"
-          onClick={() => setInputMethod('text')}
+          onClick={() => {
+            setInputMethod('text');
+            if (uploadResult) resetUpload();
+          }}
           className={`btn ${inputMethod === 'text' ? 'btn-primary' : 'btn-outline-primary'} d-flex align-items-center gap-2 px-4 py-2`}
           style={{ borderRadius: '12px', fontWeight: '600' }}
         >

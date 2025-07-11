@@ -13,7 +13,72 @@ export const AppPage: React.FC = () => {
   const [generatedContent, setGeneratedContent] = useState<StudyPackResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
-  const [lastSubmissionData, setLastSubmissionData] = useState<{ notes?: string; file?: File; fileURL?: string } | null>(null);
+  const [lastSubmissionData, setLastSubmissionData] = useState<{ text?: string; file?: File; fileUrl?: string } | null>(null);
+  const [currentTipIndex, setCurrentTipIndex] = useState(0);
+
+  // Study tips that rotate during loading
+  const studyTips = [
+    {
+      emoji: "🧠",
+      title: "Active Recall",
+      tip: "Test yourself regularly instead of just re-reading notes. Your brain strengthens connections when you actively retrieve information."
+    },
+    {
+      emoji: "📚",
+      title: "Spaced Repetition", 
+      tip: "Review material at increasing intervals (1 day, 3 days, 1 week, 2 weeks). This helps move information to long-term memory."
+    },
+    {
+      emoji: "🎯",
+      title: "The Feynman Technique",
+      tip: "Explain concepts in simple terms as if teaching a child. If you can't explain it simply, you don't understand it well enough."
+    },
+    {
+      emoji: "⏰",
+      title: "Pomodoro Technique",
+      tip: "Study in 25-minute focused sessions with 5-minute breaks. This maintains concentration and prevents mental fatigue."
+    },
+    {
+      emoji: "🔄",
+      title: "Interleaving",
+      tip: "Mix different types of problems or subjects in one study session. This improves problem-solving skills and retention."
+    },
+    {
+      emoji: "💭",
+      title: "Memory Palace",
+      tip: "Associate information with familiar locations in your mind. Walking through these mental spaces helps recall complex information."
+    },
+    {
+      emoji: "📝",
+      title: "Cornell Note System",
+      tip: "Divide your page into notes, cues, and summary sections. This structured approach enhances both note-taking and review."
+    },
+    {
+      emoji: "🎨",
+      title: "Visual Learning",
+      tip: "Create mind maps, diagrams, and flowcharts. Visual representations help your brain process and remember information better."
+    },
+    {
+      emoji: "🏃",
+      title: "Exercise & Learning",
+      tip: "Physical exercise increases BDNF (brain-derived neurotrophic factor), which enhances memory formation and cognitive function."
+    },
+    {
+      emoji: "😴",
+      title: "Sleep & Memory",
+      tip: "Get 7-9 hours of sleep. Your brain consolidates memories during sleep, especially during deep sleep phases."
+    },
+    {
+      emoji: "🎵",
+      title: "Background Music",
+      tip: "Classical or ambient music (60-70 BPM) can enhance focus and memory. Avoid lyrics when studying complex material."
+    },
+    {
+      emoji: "🍎",
+      title: "Brain Foods",
+      tip: "Eat omega-3 rich foods (fish, nuts), blueberries, and dark chocolate. These foods support brain health and cognitive function."
+    }
+  ];
 
   // Handle back navigation from study pages
   useEffect(() => {
@@ -24,33 +89,47 @@ export const AppPage: React.FC = () => {
     }
   }, [location.state]);
 
-  const handleSubmit = async (data: { notes?: string; file?: File; fileURL?: string }) => {
+  // Rotate study tips during loading
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLoading) {
+      interval = setInterval(() => {
+        setCurrentTipIndex((prev) => (prev + 1) % studyTips.length);
+      }, 4000); // Change tip every 4 seconds
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isLoading, studyTips.length]);
+
+  const handleSubmit = async (data: { text?: string; file?: File; fileUrl?: string }) => {
     try {
       setIsLoading(true);
       setError(null);
       setLastSubmissionData(data);
+      setCurrentTipIndex(0); // Reset tip rotation
       
       let response;
       
-      // Only allow fileURL (from Supabase) or notes (text input)
-      if (data.fileURL) {
+      // Only allow fileUrl (from Supabase) or text (text input)
+      if (data.fileUrl) {
         response = await fetch('/api/generate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ fileURL: data.fileURL })
+          body: JSON.stringify({ fileUrl: data.fileUrl })
         });
-      } else if (data.notes) {
+      } else if (data.text) {
         response = await fetch('/api/generate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ notes: data.notes })
+          body: JSON.stringify({ text: data.text })
         });
       } else {
-        throw new Error('No content provided. Please upload your file to Supabase or enter notes.');
+        throw new Error('No content provided. Please upload your file to Supabase or enter text.');
       }
 
       // Check if response is HTML (error page) instead of JSON
@@ -181,19 +260,117 @@ export const AppPage: React.FC = () => {
         {/* Input Form */}
         <InputForm onSubmit={handleSubmit} isLoading={isLoading} />
 
-        {/* Loading State */}
+        {/* Loading State with Study Tips */}
         {isLoading && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="d-flex flex-column align-items-center justify-content-center my-5"
-            style={{ minHeight: 200 }}
+            style={{ minHeight: 300 }}
           >
-            <div className="spinner-border text-accent-indigo mb-3" style={{ width: 64, height: 64 }} role="status">
-              <span className="visually-hidden">Loading...</span>
+            {/* Main Spinner */}
+            <div className="position-relative mb-4">
+              <div className="spinner-border text-accent-indigo" style={{ width: 64, height: 64 }} role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              {/* Rotating outer ring */}
+              <motion.div
+                className="position-absolute top-0 start-0"
+                style={{
+                  width: 80,
+                  height: 80,
+                  border: '2px solid rgba(99, 102, 241, 0.2)',
+                  borderTop: '2px solid rgba(99, 102, 241, 0.6)',
+                  borderRadius: '50%',
+                  left: '-8px',
+                  top: '-8px'
+                }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              />
             </div>
-            <div className="text-bright fs-5 mb-2">Generating your study pack...</div>
-            <div className="text-bright-muted">This may take a moment</div>
+
+            {/* Status Text */}
+            <div className="text-bright fs-5 mb-2 fw-semibold">
+              🤖 AI is analyzing your content...
+            </div>
+            <div className="text-bright-muted mb-4 text-center">
+              Generating comprehensive study materials<br />
+              <small>This process may take 1-3 minutes for large documents</small>
+            </div>
+
+            {/* Study Tip Card */}
+            <motion.div
+              key={currentTipIndex}
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.9 }}
+              transition={{ duration: 0.5 }}
+              className="card-glass p-4 text-center"
+              style={{ 
+                maxWidth: '500px',
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(124, 58, 237, 0.1))',
+                border: '2px solid rgba(99, 102, 241, 0.2)',
+                borderRadius: '16px'
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                className="fs-1 mb-2"
+              >
+                {studyTips[currentTipIndex].emoji}
+              </motion.div>
+              
+              <h4 className="text-bright fw-bold mb-2 fs-5">
+                Study Tip: {studyTips[currentTipIndex].title}
+              </h4>
+              
+              <p className="text-bright-muted mb-0 lh-base">
+                {studyTips[currentTipIndex].tip}
+              </p>
+
+              {/* Progress Dots */}
+              <div className="d-flex justify-content-center gap-1 mt-3">
+                {studyTips.map((_, index) => (
+                  <motion.div
+                    key={index}
+                    className="rounded-circle"
+                    style={{
+                      width: 8,
+                      height: 8,
+                      background: index === currentTipIndex 
+                        ? 'linear-gradient(135deg, #6366F1, #7C3AED)'
+                        : 'rgba(255, 255, 255, 0.3)'
+                    }}
+                    animate={{
+                      scale: index === currentTipIndex ? 1.2 : 1
+                    }}
+                    transition={{ duration: 0.3 }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Additional Loading Info */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1 }}
+              className="text-center mt-4"
+            >
+              <div className="text-bright-muted small">
+                <div className="mb-2">
+                  <span className="badge bg-primary-subtle text-primary me-2">✨ AI Analysis</span>
+                  <span className="badge bg-success-subtle text-success me-2">📚 Content Generation</span>
+                  <span className="badge bg-info-subtle text-info">🎯 Quality Optimization</span>
+                </div>
+                <div>
+                  Creating personalized flashcards, quiz questions, and study summaries...
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         )}
 

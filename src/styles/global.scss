@@ -421,3 +421,369 @@
     font-size: 0.9rem;
   }
 } 
+
+// Enhanced mobile responsiveness for study components
+@media (max-width: 768px) {
+  // Tab selector improvements
+  .position-sticky {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+  }
+
+  // Modal improvements on mobile
+  .card-glass {
+    margin: 0.5rem !important;
+    max-width: calc(100vw - 1rem) !important;
+    max-height: calc(100vh - 2rem) !important;
+  }
+
+  // Better text scaling
+  .h4-md {
+    font-size: 1.5rem !important;
+  }
+
+  // Improved button spacing
+  .d-flex.gap-3 {
+    gap: 0.75rem !important;
+  }
+
+  .d-flex.gap-4 {
+    gap: 1rem !important;
+  }
+
+  // Quiz and flashcard specific improvements
+  .quiz-container .card-glass {
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .quiz-options .btn {
+    margin-bottom: 0.5rem !important;
+    text-align: left !important;
+    min-height: 60px !important;
+    padding: 0.75rem 1rem !important;
+  }
+
+  // Better flashcard controls
+  .flashcard-controls {
+    gap: 0.5rem !important;
+    flex-wrap: wrap !important;
+  }
+
+  .flashcard-controls .btn {
+    flex: 1 1 auto !important;
+    min-width: 80px !important;
+  }
+
+  // Summary view improvements
+  .summary-section {
+    margin-bottom: 1rem !important;
+  }
+
+  .concept-tags .btn {
+    margin-bottom: 0.5rem !important;
+    font-size: 0.8rem !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+}
+
+// Extra small devices improvements
+@media (max-width: 480px) {
+  .flashcard-container {
+    height: 280px !important;
+    margin: 0 auto !important;
+  }
+
+  .quiz-question {
+    font-size: 0.9rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .quiz-options .btn {
+    font-size: 0.85rem !important;
+    padding: 0.625rem 0.75rem !important;
+  }
+
+  // Action buttons stack on very small screens
+  .study-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .study-actions .btn {
+    margin-bottom: 0.75rem !important;
+  }
+
+  // Tab selector on mobile
+  .tab-selector {
+    font-size: 0.75rem !important;
+  }
+
+  .tab-selector .btn {
+    padding: 0.5rem 0.75rem !important;
+    min-width: 80px !important;
+  }
+}
+
+// Touch-friendly improvements
+@media (hover: none) and (pointer: coarse) {
+  .btn, .interactive-card {
+    transform: none !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease !important;
+  }
+
+  .btn:hover, .interactive-card:hover {
+    transform: none !important;
+  }
+
+  .btn:active {
+    transform: scale(0.98) !important;
+  }
+
+  // Larger touch targets
+  .btn {
+    min-height: 48px !important;
+    min-width: 48px !important;
+  }
+
+  .btn-sm {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+}
+
+// Print styles
+@media print {
+  .bg-gradient-main,
+  .card-glass {
+    background: white !important;
+    color: black !important;
+  }
+
+  .btn, .interactive-card {
+    display: none !important;
+  }
+
+  .text-bright, .text-bright-muted {
+    color: black !important;
+    text-shadow: none !important;
+  }
+} 
+
+/* Enhanced Summary Page Styles */
+.summary-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem;
+
+  @media (max-width: 768px) {
+    padding: 0 0.5rem;
+  }
+}
+
+.overview-hero {
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(124, 58, 237, 0.1));
+    border-radius: 32px;
+    filter: blur(20px);
+    opacity: 0.5;
+    z-index: -1;
+  }
+
+  @media (max-width: 768px) {
+    margin-bottom: 1.5rem !important;
+  }
+}
+
+/* Interactive Key Points Grid Enhancements */
+.key-points-grid {
+  .point-card {
+    position: relative;
+    overflow: hidden;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+    
+    &:hover::before {
+      left: 100%;
+    }
+    
+    &:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 16px 40px rgba(245, 158, 11, 0.3) !important;
+    }
+
+    @media (max-width: 768px) {
+      &:hover {
+        transform: translateY(-4px) scale(1.01);
+      }
+    }
+  }
+}
+
+/* Definitions Grid Improvements */
+.definitions-grid {
+  .definition-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    &:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 12px 32px rgba(16, 185, 129, 0.25) !important;
+      border-color: rgba(16, 185, 129, 0.4) !important;
+    }
+
+    @media (max-width: 768px) {
+      &:hover {
+        transform: translateY(-2px) scale(1.01);
+      }
+    }
+  }
+}
+
+/* Modal Enhancements */
+.modal-backdrop-blur {
+  backdrop-filter: blur(16px);
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.9));
+}
+
+.modal-content-enhanced {
+  background: linear-gradient(145deg, rgba(31, 41, 55, 0.98), rgba(55, 65, 81, 0.98));
+  backdrop-filter: blur(30px);
+  box-shadow: 
+    0 25px 80px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  
+  @media (max-width: 768px) {
+    margin: 1rem;
+    max-height: 90vh !important;
+  }
+}
+
+/* Enhanced Action Buttons */
+.summary-action-buttons {
+  .action-btn {
+    position: relative;
+    overflow: hidden;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.8s ease;
+    }
+    
+    &:hover::before {
+      left: 100%;
+    }
+
+    @media (max-width: 576px) {
+      padding: 16px 20px !important;
+      min-height: 64px !important;
+      
+      .fs-2 {
+        font-size: 1.5rem !important;
+      }
+      
+      .fs-6 {
+        font-size: 0.9rem !important;
+      }
+    }
+  }
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+  .h4 {
+    font-size: 1.15rem !important;
+  }
+  
+  .h5 {
+    font-size: 1rem !important;
+  }
+  
+  .h6 {
+    font-size: 0.9rem !important;
+  }
+}
+
+/* Improved Spacing for Mobile */
+@media (max-width: 576px) {
+  .summary-container {
+    .overview-hero .p-4 {
+      padding: 1.5rem !important;
+    }
+    
+    .overview-hero .p-md-5 {
+      padding: 1.5rem !important;
+    }
+    
+    .key-points-grid .p-4 {
+      padding: 1rem !important;
+    }
+    
+    .definitions-grid .p-3 {
+      padding: 0.75rem !important;
+    }
+  }
+}
+
+/* Loading State Improvements */
+.summary-loading {
+  .spinner-border {
+    border-width: 3px;
+    animation: spinner-grow 1.5s linear infinite;
+  }
+}
+
+/* Accessibility Improvements */
+.cursor-pointer {
+  cursor: pointer;
+  
+  &:focus {
+    outline: 2px solid rgba(99, 102, 241, 0.5);
+    outline-offset: 4px;
+  }
+  
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.7);
+  }
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Enhanced Card Animations */
+.card-animate {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    transform: translateY(-2px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+} 

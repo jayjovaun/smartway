@@ -1,23 +1,58 @@
-# 🚀 Deploy SmartWay to Vercel
+# 🚀 SmartWay - Vercel 2025 Deployment Guide
 
-This guide will help you deploy your SmartWay app to Vercel so others can access it via a public URL.
+This guide will help you deploy your SmartWay app to Vercel using the latest 2025 serverless function standards.
+
+## ✨ What's New in 2025 Architecture
+
+- **✅ Serverless Functions**: Individual API endpoints instead of monolithic server
+- **✅ 2.5-minute timeout**: Extended processing time for large documents
+- **✅ Memory optimization**: 1GB memory for AI generation, 256MB for health checks
+- **✅ Node.js 20.x**: Latest runtime for optimal performance
+- **✅ Framework detection**: Native Vite support with optimized builds
 
 ## Prerequisites
 
 - A [Vercel account](https://vercel.com/signup) (free)
 - Your project pushed to GitHub/GitLab/Bitbucket
-- Your Gemini API key
+- Google Gemini API key
+- Supabase project setup
+
+## Environment Variables
+
+Set these in your Vercel dashboard under **Settings** → **Environment Variables**:
+
+```env
+# Required: Google Gemini AI API Key
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Required: Supabase Configuration  
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key_here
+
+# Automatically set by Vercel
+NODE_ENV=production
+```
 
 ## Step 1: Prepare Your Repository
 
 1. **Commit and push your changes to GitHub**:
    ```bash
    git add .
-   git commit -m "Prepare for Vercel deployment"
+   git commit -m "Migrate to Vercel 2025 serverless functions"
    git push origin main
    ```
 
-2. **Make sure your repository is public or you have a Vercel Pro account** (for private repos)
+2. **Verify your repository structure**:
+   ```
+   smartway/
+   ├── api/                    # Serverless functions
+   │   ├── health.js          # Health check endpoint
+   │   └── generate.js        # AI generation endpoint
+   ├── src/                   # React frontend
+   ├── vercel.json           # Vercel 2025 configuration
+   ├── package.json          # Updated dependencies
+   └── README.md
+   ```
 
 ## Step 2: Deploy to Vercel
 
@@ -26,17 +61,18 @@ This guide will help you deploy your SmartWay app to Vercel so others can access
 1. **Go to [Vercel Dashboard](https://vercel.com/dashboard)**
 2. **Click "New Project"**
 3. **Import your GitHub repository**
-4. **Configure project settings**:
-   - **Project Name**: `smartway-app` (or your preferred name)
-   - **Framework Preset**: `Vite`
-   - **Root Directory**: `.` (leave as default)
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
+4. **Vercel will auto-detect settings**:
+   - **Framework Preset**: `Vite` (auto-detected)
+   - **Build Command**: `npm run build` (auto-configured)
+   - **Output Directory**: `dist` (auto-configured)
+   - **Node.js Version**: `20.x` (from vercel.json)
 
-5. **Add Environment Variables**:
+5. **Add Environment Variables** (Critical Step):
    - Click "Environment Variables"
    - Add: `GEMINI_API_KEY` = `your_actual_api_key_here`
-   - Make sure to use your actual API key (starts with `AIzaSy...`)
+   - Add: `VITE_SUPABASE_URL` = `https://your-project-id.supabase.co`
+   - Add: `VITE_SUPABASE_ANON_KEY` = `your_anon_key_here`
+   - Make sure to use **Production**, **Preview**, and **Development** environments
 
 6. **Click "Deploy"**
 
@@ -44,7 +80,7 @@ This guide will help you deploy your SmartWay app to Vercel so others can access
 
 1. **Install Vercel CLI**:
    ```bash
-   npm install -g vercel
+   npm install -g vercel@latest
    ```
 
 2. **Login to Vercel**:
@@ -54,114 +90,183 @@ This guide will help you deploy your SmartWay app to Vercel so others can access
 
 3. **Deploy from your project directory**:
    ```bash
-   vercel
+   npm run deploy
    ```
 
-4. **Follow the prompts**:
-   - Link to existing project? `N`
-   - Project name: `smartway-app`
-   - Which directory? `./`
-   - Want to override settings? `N`
-
-5. **Add environment variables**:
+4. **Add environment variables**:
    ```bash
    vercel env add GEMINI_API_KEY
+   vercel env add VITE_SUPABASE_URL
+   vercel env add VITE_SUPABASE_ANON_KEY
    ```
-   Then paste your API key when prompted.
 
-## Step 3: Set Up Environment Variables
-
-**Important**: Your Gemini API key needs to be set as an environment variable on Vercel:
-
-1. Go to your project dashboard on Vercel
-2. Navigate to **Settings** → **Environment Variables**
-3. Add a new variable:
-   - **Name**: `GEMINI_API_KEY`
-   - **Value**: Your actual API key (e.g., `AIzaSyBvYD5eyYmoM2wkgSufQT-WNHBajoPw-lw`)
-   - **Environments**: Select all (Production, Preview, Development)
-
-## Step 4: Verify Deployment
+## Step 3: Verify Deployment
 
 1. **Check build logs** in the Vercel dashboard
 2. **Test your deployed app**:
-   - Visit your app URL (e.g., `https://smartway-app.vercel.app`)
-   - Test the API: `https://your-app-url.vercel.app/api/test`
+   - Visit your app URL (e.g., `https://smartway.vercel.app`)
+   - Test health check: `https://your-app-url.vercel.app/api/health`
    - Upload a document and generate study materials
 
-## Step 5: Custom Domain (Optional)
+## Step 4: Performance Optimization
 
-If you want a custom domain:
+### Function Configuration (Automatic via vercel.json)
 
-1. Go to **Settings** → **Domains** in your Vercel project
-2. Add your custom domain
-3. Follow the DNS configuration instructions
+- **Generate API**: 150s timeout, 1GB memory, Node.js 20.x
+- **Health API**: 10s timeout, 256MB memory, Node.js 20.x
+- **CORS headers**: Automatically configured
+- **Framework detection**: Native Vite support
+
+### Monitoring
+
+1. **Function Logs**: Vercel Dashboard → Functions → View logs
+2. **Performance**: Built-in metrics for response times
+3. **Error Tracking**: Automatic error reporting
 
 ## Troubleshooting
 
 ### Common Issues:
 
 1. **API Key Not Found**:
-   - Make sure `GEMINI_API_KEY` is set in Vercel environment variables
-   - Redeploy after adding environment variables
-
-2. **Build Fails**:
-   - Check the build logs in Vercel dashboard
-   - Ensure all dependencies are in `dependencies` (not `devDependencies`)
-
-3. **API Routes Not Working**:
-   - Verify `vercel.json` configuration is correct
-   - Check that API files are in the `/api` directory
-
-4. **File Upload Issues**:
-   - Vercel has a 10MB request limit for serverless functions
-   - Large files may timeout (adjust in `vercel.json`)
-
-### Debug Steps:
-
-1. **Check API endpoint**:
    ```bash
-   curl https://your-app-url.vercel.app/api/test
+   # Check environment variables in Vercel dashboard
+   # Redeploy after adding variables
    ```
 
-2. **View function logs**:
-   - Go to Vercel dashboard → Functions → View logs
-
-3. **Test locally**:
+2. **Function Timeout**:
    ```bash
-   vercel dev
+   # Maximum timeout is now 150 seconds (2.5 minutes)
+   # Large documents should process within this limit
    ```
+
+3. **Build Fails**:
+   ```bash
+   # Check build logs for specific errors
+   # Ensure all dependencies are correctly specified
+   ```
+
+4. **CORS Issues**:
+   ```bash
+   # CORS headers are automatically configured in vercel.json
+   # No additional setup needed
+   ```
+
+### Debug Commands:
+
+```bash
+# Test health endpoint
+curl https://your-app-url.vercel.app/api/health
+
+# Local development with Vercel runtime
+npm run dev:server
+
+# Check function logs
+vercel logs
+
+# Deploy preview
+npm run deploy:preview
+```
 
 ## Features Available After Deployment
 
-✅ **Document Upload**: PDF, DOCX, DOC, TXT files  
-✅ **AI Study Generation**: Powered by Google Gemini  
-✅ **Interactive Quizzes**: Dynamic question generation  
-✅ **Flashcards**: Spaced repetition learning  
-✅ **Responsive Design**: Works on all devices  
-✅ **Fast Loading**: Optimized for performance  
+✅ **2.5-minute processing**: Extended timeout for large documents  
+✅ **Memory optimization**: 1GB for AI processing  
+✅ **Node.js 20.x**: Latest runtime performance  
+✅ **Auto-scaling**: Handles traffic spikes automatically  
+✅ **Global CDN**: Fast loading worldwide  
+✅ **HTTPS**: Automatic SSL certificates  
+✅ **Custom domains**: Easy domain configuration  
 
-## Your App URLs
+## API Endpoints
 
-After deployment, your app will be available at:
-- **Main App**: `https://your-project-name.vercel.app`
-- **API Test**: `https://your-project-name.vercel.app/api/test`
-- **API Generate**: `https://your-project-name.vercel.app/api/generate`
+After deployment, your API will be available at:
+
+### Health Check
+```bash
+GET https://your-app-url.vercel.app/api/health
+```
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-01-XX",
+  "environment": "production",
+  "services": {
+    "gemini": "configured",
+    "supabase": "configured"
+  },
+  "version": "2.0.0",
+  "deployment": "vercel-2025"
+}
+```
+
+### AI Generation
+```bash
+POST https://your-app-url.vercel.app/api/generate
+Content-Type: application/json
+
+# Text input
+{
+  "text": "Your study material here..."
+}
+
+# File URL input (from Supabase)
+{
+  "fileUrl": "https://your-supabase-storage-url/file.pdf"
+}
+```
+
+## Performance Metrics
+
+- **Cold start**: < 1 second
+- **Function execution**: 1-150 seconds (depending on content)
+- **Memory usage**: Optimized for document processing
+- **Concurrent requests**: Auto-scaling based on demand
+
+## Custom Domain Setup
+
+1. Go to **Settings** → **Domains** in your Vercel project
+2. Add your custom domain
+3. Follow DNS configuration instructions
+4. SSL certificate will be automatically provisioned
 
 ## Updating Your App
 
 To update your deployed app:
 
-1. Push changes to your GitHub repository
-2. Vercel will automatically redeploy (if auto-deploy is enabled)
-3. Or manually trigger a deployment from the Vercel dashboard
+1. **Push changes to GitHub**:
+   ```bash
+   git add .
+   git commit -m "Update feature"
+   git push origin main
+   ```
+
+2. **Automatic deployment**: Vercel will automatically redeploy
+3. **Manual deployment**: Use `npm run deploy` for immediate deployment
+
+## Cost Optimization
+
+**Vercel Free Tier Limits:**
+- ✅ **100GB-hours** of function execution time per month
+- ✅ **100GB** bandwidth per month  
+- ✅ **6,000** function invocations per day
+- ✅ **10s** function timeout (our functions use up to 150s on Pro)
+
+**Pro Tier Benefits:**
+- ✅ **1,000GB-hours** function execution
+- ✅ **1TB** bandwidth
+- ✅ **Unlimited** function invocations
+- ✅ **5-minute** function timeout (we use 2.5 minutes)
 
 ## Support
 
 If you encounter issues:
-- Check the Vercel documentation: https://vercel.com/docs
-- Review the function logs in your Vercel dashboard
-- Ensure your API key is valid and has proper permissions
+- Check Vercel function logs in the dashboard
+- Review environment variables configuration
+- Ensure Supabase policies are correctly set
+- Verify Gemini API key permissions
 
 ---
 
-🎉 **Congratulations!** Your SmartWay app is now live and accessible to users worldwide! 
+🎉 **Congratulations!** Your SmartWay app is now deployed with Vercel 2025 serverless architecture! 

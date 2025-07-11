@@ -1,148 +1,84 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { FiArrowLeft, FiBookOpen, FiLayers, FiTrendingUp } from 'react-icons/fi';
-import { Logo } from '@components/Logo';
+import { useNavigate } from 'react-router-dom';
+import { FiArrowLeft, FiRefreshCcw } from 'react-icons/fi';
+import { Logo } from './Logo';
 
 interface StudyNavigationProps {
-  currentPage: 'flashcards' | 'quiz' | 'summary';
   title: string;
+  currentPage?: string;
   rightContent?: React.ReactNode;
 }
 
 export const StudyNavigation: React.FC<StudyNavigationProps> = ({ 
-  currentPage, 
   title, 
   rightContent 
 }) => {
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const handleNavigate = (page: string) => {
-    if (page === currentPage) return;
-    
-    navigate(`/${page}`, { 
-      state: location.state,
-      replace: false 
-    });
-  };
-
-  const handleBackToApp = () => {
-    navigate('/app', { 
-      state: { 
-        generatedContent: {
-          summary: location.state?.summaryData,
-          flashcards: location.state?.flashcards,
-          quiz: location.state?.quiz
-        }
-      },
-      replace: false 
-    });
-  };
-
-  const getPageIcon = (page: string) => {
-    switch(page) {
-      case 'summary': return <FiBookOpen size={14} />;
-      case 'flashcards': return <FiLayers size={14} />;
-      case 'quiz': return <FiTrendingUp size={14} />;
-      default: return null;
-    }
-  };
-
-  const getPageEmoji = (page: string) => {
-    switch(page) {
-      case 'summary': return '📖';
-      case 'flashcards': return '📚';
-      case 'quiz': return '🧠';
-      default: return '';
-    }
-  };
 
   return (
-    <div className="mb-4">
-      {/* Top Row - Logo and Back Button */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="d-flex align-items-center justify-content-between mb-3"
-      >
-        {/* Logo and Back Button */}
-        <div className="d-flex align-items-center gap-3">
-          {/* App Logo */}
-          <Logo size={36} showText={false} />
-          
-          {/* Back Button */}
-          <button
-            onClick={handleBackToApp}
-            className="btn btn-outline-light btn-sm d-flex align-items-center gap-2"
-            style={{ 
-              borderRadius: '8px',
-              padding: '6px 12px',
-              fontSize: '14px',
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              fontWeight: '500'
-            }}
-          >
-            <FiArrowLeft size={16} />
-            <span className="d-none d-sm-inline">Back</span>
-          </button>
-        </div>
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="d-flex align-items-center justify-content-between mb-3 mb-md-4 flex-wrap gap-3"
+    >
+      {/* Left side - Logo and Back button */}
+      <div className="d-flex align-items-center gap-2 gap-md-3">
+        <motion.button
+          onClick={() => navigate(-1)}
+          className="btn btn-link text-bright-muted p-2"
+          style={{ border: 'none', background: 'none' }}
+          whileHover={{ scale: 1.1, x: -2 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <FiArrowLeft size={20} />
+        </motion.button>
+        <Logo size={32} showText={true} />
+      </div>
 
-        {/* Right Content */}
-        <div className="d-flex align-items-center">
-          {rightContent}
-        </div>
-      </motion.div>
-
-      {/* Second Row - Page Title and Navigation */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="d-flex align-items-center justify-content-between"
+      {/* Center - Title */}
+      <motion.h1
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="h5 h4-md fw-bold text-bright mb-0 text-center flex-grow-1 order-3 order-md-2"
+        style={{ minWidth: '200px' }}
       >
-        {/* Page Title */}
-        <h1 className="gradient-text mb-0 fs-3 fw-bold">
-          {title}
-        </h1>
+        {title}
+      </motion.h1>
+
+      {/* Right side - Content or Generate New Study Pack button */}
+      <div className="d-flex align-items-center gap-2 order-2 order-md-3">
+        {rightContent && (
+          <div className="me-2 me-md-3">
+            {rightContent}
+          </div>
+        )}
         
-        {/* Page Switcher */}
-        <div className="d-flex align-items-center gap-2">
-          {['summary', 'flashcards', 'quiz'].map((page) => (
-            <button
-              key={page}
-              onClick={() => handleNavigate(page)}
-              className={`btn btn-sm d-flex align-items-center gap-1 ${
-                currentPage === page 
-                  ? 'btn-primary' 
-                  : 'btn-outline-light'
-              }`}
-              style={{ 
-                borderRadius: '8px',
-                padding: '6px 12px',
-                fontSize: '13px',
-                fontWeight: '500',
-                minWidth: '70px',
-                background: currentPage === page 
-                  ? 'linear-gradient(135deg, #6366F1, #7C3AED)'
-                  : 'rgba(255, 255, 255, 0.1)',
-                border: currentPage === page 
-                  ? 'none' 
-                  : '1px solid rgba(255, 255, 255, 0.3)'
-              }}
-            >
-              {getPageIcon(page)}
-              <span className="d-none d-md-inline">
-                {page.charAt(0).toUpperCase() + page.slice(1)}
-              </span>
-              <span className="d-inline d-md-none">
-                {getPageEmoji(page)}
-              </span>
-            </button>
-          ))}
-        </div>
-      </motion.div>
-    </div>
+        {/* Generate New Study Pack button - responsive sizing */}
+        <motion.button
+          onClick={() => navigate('/app')}
+          className="btn d-flex align-items-center gap-1 gap-md-2 px-2 px-md-4 py-2 fw-semibold"
+          style={{ 
+            background: 'linear-gradient(135deg, #10B981, #059669)',
+            border: 'none',
+            borderRadius: '12px',
+            color: 'white',
+            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+            fontSize: '12px',
+            whiteSpace: 'nowrap'
+          }}
+          whileHover={{ 
+            scale: 1.05, 
+            y: -2,
+            boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)'
+          }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <FiRefreshCcw size={14} />
+          <span className="d-none d-sm-inline">Generate New Study Pack</span>
+          <span className="d-inline d-sm-none">New Pack</span>
+        </motion.button>
+      </div>
+    </motion.div>
   );
 }; 

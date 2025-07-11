@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiRotateCw, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { StudyNavigation } from '@components/StudyNavigation';
+import { TabSelector } from '@components/TabSelector';
 
 interface Flashcard {
   question: string;
@@ -100,6 +101,13 @@ export const FlashcardsPage: React.FC = () => {
               {currentIndex + 1} / {flashcards.length}
             </div>
           }
+        />
+
+        {/* Add Tab Navigation */}
+        <TabSelector 
+          activeTab="flashcards"
+          totalFlashcards={flashcards.length}
+          totalQuestions={location.state?.quiz?.length || 0}
         />
 
         <div className="d-flex justify-content-center mb-3">
@@ -202,12 +210,12 @@ export const FlashcardsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Navigation Controls - Made more compact */}
+        {/* Flashcard Controls */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="d-flex justify-content-center align-items-center gap-3 mb-3"
+          className="d-flex justify-content-center align-items-center gap-3 mb-3 flashcard-controls"
         >
           <motion.button
             onClick={handlePrevious}
@@ -222,7 +230,8 @@ export const FlashcardsPage: React.FC = () => {
             whileTap={currentIndex > 0 ? { scale: 0.95 } : {}}
           >
             <FiChevronLeft size={18} />
-            Previous
+            <span className="d-none d-sm-inline">Previous</span>
+            <span className="d-inline d-sm-none">Prev</span>
           </motion.button>
 
           <motion.button
@@ -254,7 +263,8 @@ export const FlashcardsPage: React.FC = () => {
             whileHover={currentIndex < flashcards.length - 1 ? { scale: 1.05 } : {}}
             whileTap={currentIndex < flashcards.length - 1 ? { scale: 0.95 } : {}}
           >
-            Next
+            <span className="d-none d-sm-inline">Next</span>
+            <span className="d-inline d-sm-none">Next</span>
             <FiChevronRight size={18} />
           </motion.button>
         </motion.div>
@@ -264,9 +274,15 @@ export const FlashcardsPage: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mb-3"
+          className="mb-4"
         >
-          <div className="progress" style={{ height: '6px', borderRadius: '3px' }}>
+          <div className="d-flex align-items-center justify-content-between mb-2">
+            <small className="text-bright-muted">Progress</small>
+            <small className="text-bright fw-semibold">
+              {Math.round(((currentIndex + 1) / flashcards.length) * 100)}%
+            </small>
+          </div>
+          <div className="progress" style={{ height: '6px' }}>
             <div 
               className="progress-bar" 
               style={{ 
@@ -275,50 +291,52 @@ export const FlashcardsPage: React.FC = () => {
               }}
             />
           </div>
-          <div className="text-center mt-2">
-            <span className="text-bright-muted small">
-              Progress: {Math.round(((currentIndex + 1) / flashcards.length) * 100)}%
-            </span>
-          </div>
         </motion.div>
 
-        {/* Study Tips - Made more compact */}
+        {/* Study Actions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="card-glass p-3 text-center"
-          style={{
-            maxWidth: '600px',
-            margin: '0 auto',
-            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2))',
-            border: '2px solid rgba(16, 185, 129, 0.3)'
-          }}
+          className="d-flex flex-column flex-md-row justify-content-center gap-3 mt-4 study-actions"
         >
-          <h4 className="text-bright fw-bold mb-2 fs-6">📚 Study Tips</h4>
-          <div className="row g-2 text-center">
-            <div className="col-md-4 col-12">
-              <div className="text-bright-muted small">
-                <strong>⌨️ Keyboard:</strong><br />
-                ← → Arrow keys to navigate<br />
-                Space/Enter to flip
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="card-glass p-3 text-center"
+            style={{
+              maxWidth: '600px',
+              margin: '0 auto',
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2))',
+              border: '2px solid rgba(16, 185, 129, 0.3)'
+            }}
+          >
+            <h4 className="text-bright fw-bold mb-2 fs-6">📚 Study Tips</h4>
+            <div className="row g-2 text-center">
+              <div className="col-md-4 col-12">
+                <div className="text-bright-muted small">
+                  <strong>⌨️ Keyboard:</strong><br />
+                  ← → Arrow keys to navigate<br />
+                  Space/Enter to flip
+                </div>
+              </div>
+              <div className="col-md-4 col-12">
+                <div className="text-bright-muted small">
+                  <strong>💡 Study Method:</strong><br />
+                  Read question carefully<br />
+                  Think before flipping
+                </div>
+              </div>
+              <div className="col-md-4 col-12">
+                <div className="text-bright-muted small">
+                  <strong>🎯 Best Practice:</strong><br />
+                  Review multiple times<br />
+                  Focus on difficult ones
+                </div>
               </div>
             </div>
-            <div className="col-md-4 col-12">
-              <div className="text-bright-muted small">
-                <strong>💡 Study Method:</strong><br />
-                Read question carefully<br />
-                Think before flipping
-              </div>
-            </div>
-            <div className="col-md-4 col-12">
-              <div className="text-bright-muted small">
-                <strong>🎯 Best Practice:</strong><br />
-                Review multiple times<br />
-                Focus on difficult ones
-              </div>
-            </div>
-          </div>
+          </motion.div>
         </motion.div>
       </div>
     </div>

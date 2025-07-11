@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiCheck, FiX, FiChevronRight, FiTrendingUp } from 'react-icons/fi';
 import { StudyNavigation } from '@components/StudyNavigation';
+import { TabSelector } from '@components/TabSelector';
 
 interface QuizQuestion {
   question: string;
@@ -470,6 +471,13 @@ export const QuizPage: React.FC = () => {
           }
         />
 
+        {/* Add Tab Navigation */}
+        <TabSelector 
+          activeTab="quiz"
+          totalFlashcards={location.state?.flashcards?.length || 0}
+          totalQuestions={quizQuestions.length}
+        />
+
         {/* Score Display - Moved to top and made smaller */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -539,7 +547,7 @@ export const QuizPage: React.FC = () => {
               key={currentIndex}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="card-glass p-3 mb-3"
+              className="card-glass p-3 mb-3 quiz-container"
               style={{
                 background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(124, 58, 237, 0.2))',
                 border: '2px solid rgba(99, 102, 241, 0.3)'
@@ -549,13 +557,13 @@ export const QuizPage: React.FC = () => {
                 <h2 className="text-bright fw-bold fs-5 mb-2">
                   Question {currentIndex + 1}
                 </h2>
-                <p className="text-bright fs-6 lh-base mb-3">
+                <p className="text-bright fs-6 lh-base mb-3 quiz-question">
                   {currentQuestion.question}
                 </p>
               </div>
 
               {/* Answer Options - Made more compact */}
-              <div className="d-grid gap-2">
+              <div className="d-grid gap-2 quiz-options">
                 {currentQuestion.options.map((option, index) => {
                   const isSelected = selectedAnswer === option;
                   const isCorrect = option === currentQuestion.answer;
@@ -605,9 +613,9 @@ export const QuizPage: React.FC = () => {
                       whileHover={!showResult ? { scale: 1.02, y: -2 } : {}}
                       whileTap={!showResult ? { scale: 0.98 } : {}}
                     >
-                      <div className="d-flex align-items-center gap-3">
+                      <div className="d-flex align-items-center gap-3 w-100">
                         <div 
-                          className="d-flex align-items-center justify-content-center"
+                          className="d-flex align-items-center justify-content-center flex-shrink-0"
                           style={{
                             width: '28px',
                             height: '28px',
@@ -620,21 +628,21 @@ export const QuizPage: React.FC = () => {
                           {String.fromCharCode(65 + index)}
                         </div>
                         <span className="flex-grow-1">{option}</span>
-                      </div>
-                      {showResult && isSelected && (
-                        <div className="ms-2">
-                          {isCorrect ? (
+                        {showResult && isSelected && (
+                          <div className="ms-2">
+                            {isCorrect ? (
+                              <FiCheck size={20} color="#ffffff" />
+                            ) : (
+                              <FiX size={20} color="#ffffff" />
+                            )}
+                          </div>
+                        )}
+                        {showResult && !isSelected && isCorrect && (
+                          <div className="ms-2">
                             <FiCheck size={20} color="#ffffff" />
-                          ) : (
-                            <FiX size={20} color="#ffffff" />
-                          )}
-                        </div>
-                      )}
-                      {showResult && !isSelected && isCorrect && (
-                        <div className="ms-2">
-                          <FiCheck size={20} color="#ffffff" />
-                        </div>
-                      )}
+                          </div>
+                        )}
+                      </div>
                     </motion.button>
                   );
                 })}
