@@ -4,15 +4,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/generate.js": {
-      "maxDuration": 150,
-      "memory": 1024,
-      "runtime": "nodejs20.x"
-    },
-    "api/health.js": {
-      "maxDuration": 10,
-      "memory": 256,
-      "runtime": "nodejs20.x"
+    "api/**/*.js": {
+      "maxDuration": 150
     }
   },
   "headers": [
@@ -32,16 +25,6 @@
           "value": "Content-Type, Authorization"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/health",
-      "destination": "/api/health.js"
-    },
-    {
-      "source": "/api/generate", 
-      "destination": "/api/generate.js"
     }
   ]
 }
