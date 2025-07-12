@@ -168,9 +168,11 @@ export const AppPage: React.FC = () => {
           errorMessage = 'File size must be less than 10MB. Please upload a smaller file.';
         } else if (error.message.includes('No content found')) {
           errorMessage = 'No text content could be extracted from the document. Please check the file and try again.';
-        } else if (error.message.includes('Gemini API')) {
-          errorMessage = 'AI service is temporarily unavailable. Please try again in a moment.';
-        } else if (error.message.includes('Server returned an invalid response')) {
+              } else if (error.message.includes('Gemini API') || error.message.includes('Google AI servers')) {
+        errorMessage = 'AI service is temporarily busy. Please wait 1-2 minutes and try again.';
+      } else if (error.message.includes('Rate limit exceeded')) {
+        errorMessage = 'You\'ve sent too many requests. Please wait 1 minute and try again.';
+      } else if (error.message.includes('Server returned an invalid response')) {
           errorMessage = 'Server encountered an error. Please try again or contact support if the issue persists.';
         } else if (error.message.includes('Failed to fetch')) {
           errorMessage = 'Network error. Please check your connection and try again.';

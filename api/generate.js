@@ -240,22 +240,48 @@ FORMAT YOUR RESPONSE AS VALID JSON:
   ]
 }`;
 
-    const geminiResponse = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.9,
-          topK: 50,
-          topP: 0.98,
-          maxOutputTokens: 32768,
+    // Retry logic for handling temporary API overload
+    let geminiResponse;
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        console.log(`[${requestId}] Attempt ${retryCount + 1}/${maxRetries + 1} - Calling Gemini API`);
+        
+        geminiResponse = await axios.post(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`,
+          {
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.9,
+              topK: 50,
+              topP: 0.98,
+              maxOutputTokens: 32768,
+            }
+          },
+          {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 150000 // 2.5 minutes
+          }
+        );
+        
+        console.log(`[${requestId}] Gemini API call successful`);
+        break; // Success, exit retry loop
+        
+      } catch (apiError) {
+        if (apiError.response?.status === 503 && retryCount < maxRetries) {
+          const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s
+          console.log(`[${requestId}] API overloaded, retrying in ${delay}ms... (attempt ${retryCount + 1})`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          retryCount++;
+          continue;
+        } else {
+          // Re-throw the error to be handled by the outer catch block
+          throw apiError;
         }
-      },
-      {
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 150000 // 2.5 minutes
       }
-    );
+    }
 
     const aiResponse = geminiResponse.data.candidates[0].content.parts[0].text;
     
@@ -281,8 +307,23 @@ FORMAT YOUR RESPONSE AS VALID JSON:
     // Handle specific error types
     if (error.response?.status === 503) {
       return res.status(503).json({
-        error: 'AI service temporarily overloaded. Please try again in a moment.',
-        requestId
+        error: 'Google AI servers are currently busy. This usually resolves in 1-5 minutes. Please try again.',
+        requestId,
+        retryAfter: 60, // seconds
+        tips: [
+          'Try again in 1-2 minutes',
+          'Use shorter content for faster processing',
+          'Avoid peak hours (9AM-5PM PST) if possible'
+        ]
+      });
+    }
+
+    if (error.response?.status === 429) {
+      return res.status(429).json({
+        error: 'Rate limit exceeded. Please wait a minute before trying again.',
+        requestId,
+        retryAfter: 60,
+        info: 'Free tier allows 15 requests per minute'
       });
     }
 
