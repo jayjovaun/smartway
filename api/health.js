@@ -2,7 +2,7 @@
  * Health Check API - Vercel 2025 Serverless Function
  */
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -21,8 +21,6 @@ export default async function handler(req, res) {
   try {
     // Check if required environment variables are present
     const geminiKey = process.env.GEMINI_API_KEY;
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
-    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 
     const healthStatus = {
       status: 'healthy',
@@ -30,7 +28,7 @@ export default async function handler(req, res) {
       environment: process.env.NODE_ENV || 'development',
       services: {
         gemini: geminiKey ? 'configured' : 'missing',
-        supabase: (supabaseUrl && supabaseKey) ? 'configured' : 'missing'
+        supabase: 'frontend-managed' // Supabase is handled by frontend, not backend
       },
       version: '2.0.0',
       deployment: 'vercel-2025'

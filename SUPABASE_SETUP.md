@@ -1,242 +1,198 @@
 # 🚀 Supabase Storage Setup & Deployment Guide
 
-## ✅ Current Status
+## 🎯 What We're Building
 
-**✅ COMPLETED MIGRATION:**
-- ✅ Firebase completely removed
+**File Upload Flow**: User uploads document → Supabase Storage → Generate study pack from URL
+
 - ✅ Supabase Storage integration - **READY**
-- ✅ Vercel deployment compatibility - **READY**
-- ✅ TypeScript compilation - **WORKING**
-- ✅ Build process - **WORKING**
-- ✅ Text input functionality - **WORKING**
+- ✅ Environment variables configured - **READY**
+- ✅ File upload component - **READY**
+- ✅ AI generation API - **READY**
+- ✅ Deployment configuration - **READY**
 
-## 🚀 Quick Setup
+## 📋 Setup Instructions
 
 ### 1. Supabase Project Setup
 
 1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
-2. Click "New project"
-3. Choose your organization → Enter project name → Database password → Choose region → Create project
-4. Wait for project initialization (usually 1-2 minutes)
-5. Navigate to **Storage** in the sidebar
-6. Click "Create a new bucket"
-7. Enter bucket name: `uploads`
-8. Make it **Public** (check the "Public bucket" option)
-9. Click "Create bucket"
+2. Create a new project or use existing
+3. Wait for project initialization (2-3 minutes)
+4. Note your project URL and API keys
 
 ### 2. Get Supabase Credentials
 
 1. Go to **Settings** → **API** in your Supabase dashboard
 2. Copy the **Project URL** (e.g., `https://your-project-id.supabase.co`)
-3. Copy the **Anon/Public Key** (starts with `eyJ...`)
+3. Copy the **anon public** key (starts with `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`)
 
 ### 3. Environment Variables
 
 Add these to your `.env` file and Vercel environment variables:
 
 ```env
-# Required: Gemini API Key
+# Required: Gemini AI API Key
 GEMINI_API_KEY=your_gemini_api_key_here
 
 # Required: Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
-
-# Optional: Server Configuration
-PORT=3001
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key_here
 ```
 
-### 4. Configure Storage Policies (Important!)
+### 4. Storage Bucket Setup
 
 1. In Supabase dashboard, go to **Storage** → **Policies**
-2. For the `uploads` bucket, add these policies:
+2. Create a new bucket called `uploads`
+3. **Set Public Access**:
+   - Go to **Storage** → **Policies**
+   - Create policy for **SELECT** operations
+   - **Policy Name**: `Public Access`
+   - **Allowed Operations**: `SELECT`
+   - **Target Roles**: `public`
+   - **Policy Definition**: `(bucket_id = 'uploads')`
 
-**Policy 1: Allow public uploads**
-```sql
--- Name: Allow public uploads
--- Policy: INSERT
--- Target roles: public
--- Using expression:
-true
+4. **Alternative: Create policy with SQL**:
+   ```sql
+   CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING ( bucket_id = 'uploads' );
+   ```
 
--- With check:
-bucket_id = 'uploads'
-```
+### 5. Bucket Configuration
 
-**Policy 2: Allow public downloads**
-```sql
--- Name: Allow public downloads  
--- Policy: SELECT
--- Target roles: public
--- Using expression:
-bucket_id = 'uploads'
-```
-
-Or use the simplified approach:
 1. Go to **Storage** → **Buckets**
-2. Click on your `uploads` bucket
-3. Go to **Policies** tab
-4. Click "Add policy" → "Get started quickly"
-5. Choose "Enable read access for all users" and "Enable insert access for all users"
+2. Select your `uploads` bucket
+3. Go to **Configuration**
+4. Set **Public** = `true`
+5. Set **File Size Limit** = `50MB`
+6. Set **Allowed MIME Types**:
+   - `application/pdf`
+   - `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+   - `application/msword`
+   - `text/plain`
 
-### 5. Local Testing
+### 6. CORS Configuration (if needed)
 
-```bash
-# Start development server
-npm run start:dev
+If you encounter CORS issues, add this to your bucket CORS policy:
 
-# In another terminal, test functionality
-npm run dev
-
-# Open browser: http://localhost:5173
+```json
+[
+  {
+    "allowedOrigins": ["*"],
+    "allowedHeaders": ["*"],
+    "allowedMethods": ["GET", "POST", "PUT", "DELETE", "HEAD"],
+    "maxAge": 3600
+  }
+]
 ```
 
-### 6. Deploy to Vercel
+## 🚀 Deployment Steps
+
+### 1. Vercel Environment Variables
+
+1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables
+2. Add environment variables:
+   - `GEMINI_API_KEY` = `your_gemini_api_key`
+   - `VITE_SUPABASE_URL` = `https://your-project-id.supabase.co` (for frontend build)
+   - `VITE_SUPABASE_ANON_KEY` = `your_anon_key` (for frontend build)
+
+**Note**: Backend API doesn't need Supabase credentials - it only downloads files from public URLs!
+
+### 2. Deploy to Vercel
 
 ```bash
-# Build and deploy
-npm run build
 vercel --prod
-
-# Or use Vercel dashboard:
-# 1. Connect your GitHub repo
-# 2. Add environment variables
-# 3. Deploy
 ```
 
-## 🔧 How It Works
+## 🔄 How It Works
 
-### Text Input Flow
 ```
-User types text → InputForm → AppPage → /api/generate → 
-Gemini AI → Study pack generated ✅
-```
-
-### File Upload Flow
-```
-User drops file → FileDropUpload → Supabase Storage → 
-URL sent to AppPage → /api/generate → Download from Supabase → 
-Extract text → Gemini AI → Study pack generated ✅
+User drops file → FileDropUpload → Supabase Storage →
+URL sent to AppPage → /api/generate → Download from Supabase →
+Extract text → Generate study pack
 ```
 
-## 🎯 Production Features
+## ✅ Benefits
 
-- **✅ Serverless Compatible**: No file system dependencies
 - **✅ Scalable**: Supabase handles all file storage
 - **✅ Fast**: Direct client-to-Supabase uploads
-- **✅ Secure**: Proper error handling and validation
-- **✅ Beautiful UI**: Drag-and-drop interface with progress
-- **✅ Free Tier**: 1GB storage + 2GB bandwidth free forever
+- **✅ Secure**: Files are stored securely in Supabase
+- **✅ Cost-effective**: No server storage needed
 
 ## 🆓 Supabase Free Tier
 
-**What's included FREE:**
-- **1 GB database space**
-- **2 GB file storage**
-- **5 GB bandwidth per month**
-- **50,000 monthly active users**
-- **No credit card required**
+The free tier includes:
+- 500MB database storage
+- 1GB file storage
+- 50MB file upload limit
+- 500MB bandwidth
 
-Perfect for development and small to medium production apps!
+Perfect for SmartWay's needs!
 
-## 🔒 Security Features
+## 🧪 Testing
 
-- Row Level Security (RLS) enabled
-- Public bucket with controlled access
-- File type validation on upload
-- Size limits (10MB max)
-- Direct client-to-storage uploads (no server bottleneck)
+### Test File Upload
 
-## 🧪 Testing Checklist
+1. Go to your deployed app
+2. Try uploading a PDF/Word document
+3. Check Supabase Storage dashboard
+4. Verify file appears in `uploads` bucket
 
-### Local Development
-- [ ] Text input generates study pack
-- [ ] File upload works with drag-and-drop
-- [ ] Supabase Storage shows uploaded files
-- [ ] Error handling works correctly
-- [ ] Files are publicly accessible via URL
+### Test Study Pack Generation
 
-### Vercel Deployment
-- [ ] Environment variables configured
-- [ ] Build successful
-- [ ] Text input works on deployed URL
-- [ ] File upload works on deployed URL
-- [ ] API endpoints respond correctly
+1. Upload a file
+2. Click "Generate Study Pack"
+3. Should work without errors
 
-## 🚨 Troubleshooting
+## 🔧 Troubleshooting
 
 ### Common Issues
 
 **"Missing Supabase environment variables"**
-→ Check environment variables are set with `NEXT_PUBLIC_` prefix
+- Check environment variables are set with `VITE_` prefix (not `NEXT_PUBLIC_`)
+- Verify bucket exists and is public
+- Check project URL is correct
 
-**"File upload fails"**
+**"Upload failed"**
 → Verify Supabase bucket policies allow public uploads
+→ Check file size is under 50MB
+→ Verify file type is supported
 
-**"Policy violation" error**
-→ Make sure storage policies are configured correctly (see step 4)
+**"500 Internal Server Error"**
+→ Check environment variables in Vercel
+→ Verify Supabase files are publicly accessible
+→ Check Gemini API key is set correctly
 
-**"Text input 500 error"**
-→ Check Gemini API key is valid and properly set
-
-**"Build fails"**
-→ Run `npm install` and check for TypeScript errors
-
-### Debug Commands
+### Debug Environment Variables
 
 ```bash
 # Check environment variables
 node -e "console.log(process.env.GEMINI_API_KEY ? 'API Key Set' : 'Missing API Key')"
 
 # Test Supabase config
-node -e "console.log(process.env.NEXT_PUBLIC_SUPABASE_URL)"
-
-# Test build
-npm run build
-
-# Test server
-npm run start:dev
+node -e "console.log(process.env.VITE_SUPABASE_URL)"
 ```
 
-## 📊 Advantages Over Firebase
+## 🎉 Current Status
 
-✅ **Always Free**: No credit card required, ever
-✅ **Open Source**: Full transparency and control
-✅ **PostgreSQL**: More powerful than Firestore
-✅ **Real-time**: Built-in subscriptions
-✅ **Better Developer Experience**: Intuitive dashboard
-✅ **No Vendor Lock-in**: Standard PostgreSQL + S3-compatible storage
+✅ **COMPLETE** - Ready for production use!
 
-## 📈 Performance Optimizations
-
+Key features implemented:
 - Files upload directly to Supabase (no server processing)
-- Text extraction happens server-side for security
-- CDN-powered file delivery
-- Automatic image optimization (if needed)
-- Proper error boundaries and fallbacks
+- Public URLs generated for AI processing
+- Secure storage with proper access controls
+- Error handling and validation
+- File type and size restrictions
+- Progress tracking during upload
+- Clean UI with upload status
 
-## 🎉 Ready for Production!
+## 🔄 Migration Complete
 
-Your app is now fully configured for Vercel deployment with:
-- ✅ Working text input
-- ✅ Working file upload via Supabase
-- ✅ Proper error handling
-- ✅ Scalable architecture
-- ✅ Beautiful UI/UX
-- ✅ Free forever tier
-- ✅ No credit card required
+✅ **DONE** - Migration from direct file upload to Supabase Storage
 
-Deploy with confidence! 🚀
-
-## 📋 Migration Completed
-
-**What was changed:**
-1. ❌ Removed Firebase SDK and dependencies
+1. ✅ Created Supabase project
 2. ✅ Added Supabase client
 3. ✅ Updated upload utility (`src/utils/uploadFile.ts`)
 4. ✅ Updated UI components to reference Supabase
-5. ✅ Updated server-side file processing
+5. ✅ Updated API to handle Supabase URLs
 6. ✅ Created new environment variable structure
-7. ✅ Maintained all existing functionality
+7. ✅ Updated deployment configuration
 
-**No UI changes** - everything looks and works exactly the same for users! 
+The app now uses Supabase for all file operations! 🎉 

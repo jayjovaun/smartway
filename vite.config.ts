@@ -5,6 +5,13 @@ import path from 'path'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler',
+      },
+    },
+  },
   resolve: {
     alias: {
       '@components': path.resolve(__dirname, './src/components'),
@@ -19,5 +26,19 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:3001',
     },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['bootstrap', 'react-icons'],
+          motion: ['framer-motion'],
+          router: ['react-router-dom'],
+          supabase: ['@supabase/supabase-js'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
   },
 })

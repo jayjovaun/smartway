@@ -36,3 +36,5 @@ uploads/*
 *.njsproj
 *.sln
 *.sw?
+
+.vercel

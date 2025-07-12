@@ -3,7 +3,7 @@
  * Optimized for large document processing with 2.5-minute timeout
  */
 
-import axios from 'axios';
+const axios = require('axios');
 
 // Dynamic package loading with fallbacks for serverless environment
 let pdfParse, mammoth;
@@ -38,19 +38,40 @@ const extractTextFromBuffer = async (buffer, contentType) => {
 };
 
 const processFileUrl = async (fileUrl) => {
-  const response = await axios.get(fileUrl, {
-    responseType: 'arraybuffer',
-    timeout: 60000,
-    headers: { 'User-Agent': 'SmartWay-AI/2.0' }
-  });
+  try {
+    console.log(`Processing file URL: ${fileUrl}`);
+    
+    // Validate URL format
+    if (!fileUrl.startsWith('http://') && !fileUrl.startsWith('https://')) {
+      throw new Error('Invalid file URL format');
+    }
+    
+    // Log for debugging
+    console.log(`Attempting to download from: ${fileUrl}`);
+    
+    const response = await axios.get(fileUrl, {
+      responseType: 'arraybuffer',
+      timeout: 60000,
+      headers: { 'User-Agent': 'SmartWay-AI/2.0' }
+    });
 
-  const buffer = Buffer.from(response.data);
-  const contentType = response.headers['content-type'] || 'application/octet-stream';
-  
-  return await extractTextFromBuffer(buffer, contentType);
+    console.log(`File downloaded successfully. Content-Type: ${response.headers['content-type']}, Size: ${response.data.length} bytes`);
+
+    const buffer = Buffer.from(response.data);
+    const contentType = response.headers['content-type'] || 'application/octet-stream';
+    
+    return await extractTextFromBuffer(buffer, contentType);
+  } catch (error) {
+    console.error('Error processing file URL:', error.message);
+    if (error.response) {
+      console.error('HTTP Status:', error.response.status);
+      console.error('HTTP Headers:', error.response.headers);
+    }
+    throw new Error(`Failed to download or process file: ${error.message}`);
+  }
 };
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -255,6 +276,7 @@ FORMAT YOUR RESPONSE AS VALID JSON:
 
   } catch (error) {
     console.error(`[${requestId}] Error:`, error.message);
+    console.error(`[${requestId}] Stack:`, error.stack);
     
     // Handle specific error types
     if (error.response?.status === 503) {
@@ -271,9 +293,35 @@ FORMAT YOUR RESPONSE AS VALID JSON:
       });
     }
 
+    // Handle file download errors (Supabase-related)
+    if (error.message.includes('Failed to download') || error.message.includes('getaddrinfo ENOTFOUND')) {
+      return res.status(400).json({
+        error: 'Unable to access the uploaded file. Please check if the file is publicly accessible and try uploading again.',
+        requestId,
+        hint: 'This might be a Supabase storage permission issue.'
+      });
+    }
+
+    // Handle PDF parsing errors
+    if (error.message.includes('PDF processing not available')) {
+      return res.status(500).json({
+        error: 'PDF processing is temporarily unavailable. Please try uploading a Word document or text file.',
+        requestId
+      });
+    }
+
+    // Handle document processing errors
+    if (error.message.includes('Word document processing not available')) {
+      return res.status(500).json({
+        error: 'Word document processing is temporarily unavailable. Please try uploading a PDF or text file.',
+        requestId
+      });
+    }
+
     return res.status(500).json({
       error: error.message || 'An unexpected error occurred.',
-      requestId
+      requestId,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 } 

@@ -22,16 +22,18 @@ This guide will help you deploy your SmartWay app to Vercel using the latest 202
 Set these in your Vercel dashboard under **Settings** → **Environment Variables**:
 
 ```env
-# Required: Google Gemini AI API Key
+# Required: Google Gemini AI API Key (for backend API)
 GEMINI_API_KEY=your_gemini_api_key_here
 
-# Required: Supabase Configuration  
+# Required: Supabase Configuration (for frontend build only)
 VITE_SUPABASE_URL=https://your-project-id.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key_here
 
 # Automatically set by Vercel
 NODE_ENV=production
 ```
+
+**Important**: Backend API only needs `GEMINI_API_KEY`. Supabase credentials are used by frontend to upload files and generate public URLs.
 
 ## Step 1: Prepare Your Repository
 
@@ -69,9 +71,9 @@ NODE_ENV=production
 
 5. **Add Environment Variables** (Critical Step):
    - Click "Environment Variables"
-   - Add: `GEMINI_API_KEY` = `your_actual_api_key_here`
-   - Add: `VITE_SUPABASE_URL` = `https://your-project-id.supabase.co`
-   - Add: `VITE_SUPABASE_ANON_KEY` = `your_anon_key_here`
+   - Add: `GEMINI_API_KEY` = `your_actual_api_key_here` (REQUIRED for backend)
+   - Add: `VITE_SUPABASE_URL` = `https://your-project-id.supabase.co` (for frontend build)
+   - Add: `VITE_SUPABASE_ANON_KEY` = `your_anon_key_here` (for frontend build)
    - Make sure to use **Production**, **Preview**, and **Development** environments
 
 6. **Click "Deploy"**
@@ -194,7 +196,7 @@ GET https://your-app-url.vercel.app/api/health
   "environment": "production",
   "services": {
     "gemini": "configured",
-    "supabase": "configured"
+    "supabase": "frontend-managed"
   },
   "version": "2.0.0",
   "deployment": "vercel-2025"
